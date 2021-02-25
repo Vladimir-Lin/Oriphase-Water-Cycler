@@ -8,8 +8,8 @@ havingWaterLevel     = false ;
 havingWaterLevelHat  = false ;
 havingWaterShell     = false ;
 havingTankFrontRight = false ;
-havingTankFrontLeft  = false ;
-havingBackPanel      = true  ;
+havingTankFrontLeft  = true  ;
+havingBackPanel      = false ;
 
 translate ( [ 0 , 0 , 0 ] )
 {
@@ -148,7 +148,7 @@ module oriphase_water_cycler_water_shell ()
 
 module oriphase_water_cycler_tank_front_right ( )
 {
-  width       = 11.0 ;
+  width       = 14.0 ;
   base        =  6.0 ;
   jwidth      = 30.0 ;
   fence       = 10.0 ;
@@ -171,7 +171,7 @@ module oriphase_water_cycler_tank_front_right ( )
       translate ( [ width , base + plate , plate ] ) {
         cube ( size = [ jwidth + 2.0 , gap , fence ] ) ;
       } ;
-      translate ( [ 5.0 , length - 10.0 , -10.0 ] ) {
+      translate ( [ 6.5 , length - 10.0 , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
     } ;
@@ -183,7 +183,7 @@ module oriphase_water_cycler_back_panel ( )
   width       = 146.0 ;
   length      =  96.0 ;
   height      =  12.0 ;
-  side        =  10.0 ;
+  side        =  13.0 ;
   bwidth      =  width  + ( side * 2 ) ;
   blength     =  length + side ;
   jgap        = ( plate * 2 ) + gap ;
@@ -225,22 +225,22 @@ module oriphase_water_cycler_back_panel ( )
       translate ( [ 110.0 , 44.0 , dig_base ] ) {
         cube ( size = [ switch_w , switch_h , dig_height ] ) ;
       } ;
-      translate ( [ 5.0 , 30.0 , -10.0 ] ) {
+      translate ( [ ( side / 2.0 ) , 30.0 , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
-      translate ( [ 5.0 , 90.0 , -10.0 ] ) {
+      translate ( [ ( side / 2.0 ) , 90.0 , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
-      translate ( [ width + side + 5.0 , 30.0 , -10.0 ] ) {
+      translate ( [ width + side + ( side / 2.0 ) , 30.0 , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
-      translate ( [ width + side + 5.0 , 90.0 , -10.0 ] ) {
+      translate ( [ width + side + ( side / 2.0 ) , 90.0 , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
-      translate ( [ 40.0 , 5.0 , -10.0 ] ) {
+      translate ( [ 40.0 , ( side / 2.0 ) , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
-      translate ( [ bwidth - 40.0 , 5.0 , -10.0 ] ) {
+      translate ( [ bwidth - 40.0 , ( side / 2.0 ) , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
     } ;
