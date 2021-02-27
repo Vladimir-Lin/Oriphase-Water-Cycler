@@ -8,8 +8,11 @@ havingWaterLevel     = false ;
 havingWaterLevelHat  = false ;
 havingWaterShell     = false ;
 havingTankFrontRight = false ;
-havingTankFrontLeft  = true  ;
+havingTankFrontLeft  = false ;
 havingBackPanel      = false ;
+havingTBone          = false ;
+havingRightAngle     = false ;
+havingRightScrew     = true  ;
 
 translate ( [ 0 , 0 , 0 ] )
 {
@@ -49,6 +52,21 @@ translate ( [ 0 , 0 , 0 ] )
     if ( havingBackPanel ) {
       translate ( [ 0 , 0 , 0 ] ) {
         oriphase_water_cycler_back_panel ( ) ;
+      } ;
+    } ;
+    if ( havingTBone ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        oriphase_water_cycler_t_bone ( 15.0 , 12.0 ) ;
+      } ;
+    } ;
+    if ( havingRightAngle ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        RightAngleConnector ( 1.6 , 3.0 , 18.0 , 12.0 , 70.0 ) ;
+      } ;
+    } ;
+    if ( havingRightScrew ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        RightAngleScrew ( 1.6 , 3.0 , 18.0 , 12.0 , 70.0 , 4.4 , 2.1 , 3.8 ) ;
       } ;
     } ;
   } ;
@@ -151,7 +169,7 @@ module oriphase_water_cycler_tank_front_right ( )
   width       = 14.0 ;
   base        =  6.0 ;
   jwidth      = 30.0 ;
-  fence       = 10.0 ;
+  fence       = 15.0 ;
   jlength     = ( plate * 2 ) + gap ;
   length      = 20.0 + base + jlength ;
   hole_radius = 2.5 ;
@@ -290,4 +308,159 @@ module roundedBox ( width , length , height , radius )
     cube     ( size = [ width - dRadius , length - dRadius , height ] ) ;
     cylinder ( d = dRadius , h = 0.01 ) ;
   }
+}
+
+module oriphase_water_cycler_t_bone ( mounter , height )
+{
+  bwidth = gap + ( plate * 2 ) ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube ( size = [ bwidth , bwidth + ( mounter * 2 ) , height + plate ] ) ;
+      } ;
+      translate ( [ bwidth - 0.1 , mounter , 0.0 ] ) {
+        cube ( size = [ mounter + 0.1 , bwidth , height + plate ] ) ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ plate , -10.0 , plate ] ) {
+        cube ( size = [ gap , bwidth + ( mounter * 2 ) + 20.0 , height + plate ] ) ;
+      } ;
+      translate ( [ plate , mounter + plate , plate ] ) {
+        cube ( size = [ bwidth + mounter , gap , height + plate ] ) ;
+      } ;
+    } ;
+  }
+}
+
+module hexagon_screw ( r , h ) {
+  w = r / 2.0 ;
+  f = 0.8660254 * r ;
+  linear_extrude ( height = h ) {
+    polygon ( points = [
+                [  r ,  0 ] ,
+                [  w ,  f ] ,
+                [ -w ,  f ] ,
+                [ -r ,  0 ] ,
+                [ -w , -f ] ,
+                [  w , -f ] ,
+              ] ,
+              convexity = 1 ) ;
+  } ;
+}
+
+module RightAngleConnector ( thickness , acrylic , vertical , horizontal , length )
+{
+  dt = ( thickness * 2 ) ;
+  dg = - 1.0 ;
+  gw = - ( dg * 2 ) ;
+  w  = dt + acrylic ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        difference ( ) {
+          translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+            cube ( size = [ w , length , vertical ] ) ;
+          } ;
+          translate ( [ thickness , dg , thickness ] ) {
+            cube ( size = [ acrylic , length + gw , vertical ] ) ;
+          } ;
+        } ;
+      } ;
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        difference ( ) {
+          translate ( [ w - 0.4 , 0.0 , 0.0 ] ) {
+            cube ( size = [ horizontal + 0.4 , length , w ] ) ;
+          } ;
+          translate ( [ w , dg , thickness ] ) {
+            cube ( size = [ horizontal + gw , length + gw , acrylic ] ) ;
+          } ;
+        } ;
+      } ;
+    } ;
+  } ;
+}
+
+module RightAngleScrew ( thickness , acrylic , vertical , horizontal , length , screw_trap , screw_hole , bottom_hole )
+{
+  dt = ( thickness * 2 ) ;
+  w  = dt + acrylic ;
+  sh =  4.4 ;
+  sw = 12.0 ;
+  sc = ( sw / 2.0 ) ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        RightAngleConnector ( thickness , acrylic , vertical , horizontal , length ) ;
+      } ;
+      translate ( [ w - 0.4 , 0.0  , w - 0.4 ] ) {
+        cube     ( size = [ horizontal + 0.4 , sw , sh ] ) ;
+      } ;
+      translate ( [ w - 0.4 , length - sw , w - 0.4 ] ) {
+        cube     ( size = [ horizontal + 0.4 , sw , sh ] ) ;
+      } ;
+      translate ( [ w - 0.4 , sw - 0.4 , w - 0.4 ] ) {
+        rotate ( a = 90 , v = [ 0 , 0 , 1 ] ) {
+          rotate ( a = 90 , v = [ 1 , 0 , 0 ] ) {
+            linear_extrude ( height = horizontal + 0.4 ) {
+              polygon ( points = [
+                  [ 0.0 , 0.0 ] ,
+                  [  sh , 0.0 ] ,
+                  [  sh , 0.4 ] ,
+                  [ 0.4 ,  sh ] ,
+                  [ 0.0 ,  sh ] ,
+                  [ 0.0 , 0.0 ] ,
+                ] ,
+                convexity = 1 ) ;
+            } ;
+          } ;
+        } ;
+      } ;
+      translate ( [ horizontal + w , length - sw , w - 0.4 ] ) {
+        rotate ( a = 270 , v = [ 0 , 0 , 1 ] ) {
+          rotate ( a = 90 , v = [ 1 , 0 , 0 ] ) {
+            linear_extrude ( height = horizontal + 0.4 ) {
+              polygon ( points = [
+                  [ 0.0 , 0.0 ] ,
+                  [  sh , 0.0 ] ,
+                  [  sh , 0.4 ] ,
+                  [ 0.4 ,  sh ] ,
+                  [ 0.0 ,  sh ] ,
+                  [ 0.0 , 0.0 ] ,
+                ] ,
+                convexity = 1 ) ;
+            } ;
+          } ;
+        } ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ w + ( horizontal / 2.0 ) , sc  , -1.0 ] ) {
+        union ( ) {
+          translate ( [ 0.0 , 0.0 , w + sh - 2.5 ] ) {
+            hexagon_screw ( screw_trap , sh ) ;
+          } ;
+          translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+            cylinder ( r = screw_hole , h = w + ( sh * 2 ) ) ;
+          } ;
+          translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+            cylinder ( r = bottom_hole , h = thickness + acrylic ) ;
+          } ;
+        } ;
+      } ;
+      translate ( [ w + ( horizontal / 2.0 ) , length - sc  , -1.0 ] ) {
+        union ( ) {
+          translate ( [ 0.0 , 0.0 , w + sh - 2.5 ] ) {
+            hexagon_screw ( screw_trap , sh ) ;
+          } ;
+          translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+            cylinder ( r = screw_hole , h = w + ( sh * 2 ) ) ;
+          } ;
+          translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+            cylinder ( r = bottom_hole , h = thickness + acrylic ) ;
+          } ;
+        } ;
+      } ;
+    } ;
+  } ;
 }
