@@ -11,8 +11,8 @@ havingTankFrontRight = false ;
 havingTankFrontLeft  = false ;
 havingBackPanel      = false ;
 havingTBone          = false ;
-havingRightAngle     = false ;
-havingRightScrew     = true  ;
+havingRightAngle     = true  ;
+havingRightScrew     = false ;
 
 translate ( [ 0 , 0 , 0 ] )
 {
@@ -61,12 +61,12 @@ translate ( [ 0 , 0 , 0 ] )
     } ;
     if ( havingRightAngle ) {
       translate ( [ 0 , 0 , 0 ] ) {
-        RightAngleConnector ( 1.6 , 3.0 , 18.0 , 12.0 , 70.0 ) ;
+        RightAngleConnector ( 1.6 , 3.3 , 18.0 , 12.0 , 72.0 ) ;
       } ;
     } ;
     if ( havingRightScrew ) {
       translate ( [ 0 , 0 , 0 ] ) {
-        RightAngleScrew ( 1.6 , 3.0 , 18.0 , 12.0 , 70.0 , 4.4 , 2.1 , 3.8 ) ;
+        RightAngleScrew ( 1.6 , 3.3 , 18.0 , 12.0 , 60.0 , 4.4 , 2.1 , 3.8 ) ;
       } ;
     } ;
   } ;
