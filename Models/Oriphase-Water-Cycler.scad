@@ -18,7 +18,9 @@ havingLeftWaterProof  = false ;
 havingPumpWaterProof  = false ;
 havingShieldLatcher   = false ;
 havingPipeHolder      = false ;
-havingFrontPlate      = true  ;
+havingFrontPlate      = false ;
+havingWaterNozzle     = false ;
+havingNozzleClamp     = true  ;
 
 translate ( [ 0 , 0 , 0 ] )
 {
@@ -105,6 +107,16 @@ translate ( [ 0 , 0 , 0 ] )
     if ( havingFrontPlate ) {
       translate ( [ 0 , 0 , 0 ] ) {
         WaterFrontPlate ( ) ;
+      } ;
+    }
+    if ( havingWaterNozzle ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        WaterNozzle ( ) ;
+      } ;
+    }
+    if ( havingNozzleClamp ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        WaterNozzleClamp ( ) ;
       } ;
     }
   } ;
@@ -722,6 +734,79 @@ module WaterFrontPlate ( )
       } ;
       translate ( [ bwidth - 40.0 , ( side / 2.0 ) , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
+      } ;
+    } ;
+  } ;
+}
+
+module WaterNozzleClamp ( )
+{
+  width  = 24.0 ;
+  height = 15.0 ;
+  length = 20.0 ;
+  roller = 25.0 ;
+  hole   =  6.0 ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ width + ( plate * 2 ) , height + ( plate * 2 ) , length ] ) ;
+      } ;
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ plate , height + ( plate * 2 ) + roller , length ] ) ;
+      } ;
+      translate ( [ width + plate , 0.0 , 0.0 ] ) {
+        cube     ( size = [ plate , height + ( plate * 2 ) + roller , length ] ) ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ plate , plate , plate ] ) {
+        cube     ( size = [ width , height , length + 20.0 ] ) ;
+      } ;
+      translate ( [ plate + 5.0 , 10.0 , plate ] ) {
+        cube     ( size = [ width - 10.0 , height , length + 20.0 ] ) ;
+      } ;
+      translate ( [ -10.0 , height + ( plate * 2 ) + roller - 6.0 , length / 2.0 ] ) {
+        rotate ( a = 90 , v = [ 0 , 1 , 0 ] ) {
+          cylinder ( d = 2.0 , h = width + 40.0 ) ;
+        } ;
+      } ;
+      translate ( [ -10.0 , ( height / 2.0 ) + plate , length / 2.0 ] ) {
+        rotate ( a = 90 , v = [ 0 , 1 , 0 ] ) {
+          cylinder ( d = 4.0 , h = width + 40.0 ) ;
+        } ;
+      } ;
+    } ;
+  } ;
+}
+
+module WaterNozzle ( )
+{
+  width  = 24.0 ;
+  length = 10.0 ;
+  nozzle = 10.0 ;
+  hole   =  6.0 ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ width , length , length ] ) ;
+      } ;
+      translate ( [ width / 2.0 , length / 2.0 , length - 0.1 ] ) {
+        cylinder ( d = hole + ( plate * 2 ) , h = nozzle + 0.1 ) ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ -15.0 , length / 2.0 , length / 2.0 ] ) {
+        rotate ( a = 90 , v = [ 0 , 1 , 0 ] ) {
+          cylinder ( d = 2.0 , h = 20.0 ) ;
+        } ;
+      } ;
+      translate ( [ width - 5.0 , length / 2.0 , length / 2.0 ] ) {
+        rotate ( a = 90 , v = [ 0 , 1 , 0 ] ) {
+          cylinder ( d = 2.0 , h = 20.0 ) ;
+        } ;
+      } ;
+      translate ( [ width / 2.0 , length / 2.0 , -10.0 ] ) {
+        cylinder ( d = hole , h = length + nozzle + 20.0 ) ;
       } ;
     } ;
   } ;
