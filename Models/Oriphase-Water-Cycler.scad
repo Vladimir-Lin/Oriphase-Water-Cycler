@@ -1,18 +1,24 @@
-$fn                  = 400   ;
+$fn                   = 400   ;
 
-plate                = 2.0   ;
-gap                  = 3.0   ;
+plate                 = 2.0   ;
+gap                   = 3.0   ;
 
-havingPumpMuzzle     = false ;
-havingWaterLevel     = false ;
-havingWaterLevelHat  = false ;
-havingWaterShell     = false ;
-havingTankFrontRight = false ;
-havingTankFrontLeft  = false ;
-havingBackPanel      = false ;
-havingTBone          = false ;
-havingRightAngle     = true  ;
-havingRightScrew     = false ;
+havingPumpMuzzle      = false ;
+havingWaterLevel      = false ;
+havingWaterLevelHat   = false ;
+havingWaterShell      = false ;
+havingTankFrontRight  = false ;
+havingTankFrontLeft   = false ;
+havingBackPanel       = false ;
+havingTBone           = false ;
+havingRightAngle      = false ;
+havingRightScrew      = false ;
+havingRightWaterProof = false ;
+havingLeftWaterProof  = false ;
+havingPumpWaterProof  = false ;
+havingShieldLatcher   = false ;
+havingPipeHolder      = false ;
+havingFrontPlate      = true  ;
 
 translate ( [ 0 , 0 , 0 ] )
 {
@@ -69,6 +75,38 @@ translate ( [ 0 , 0 , 0 ] )
         RightAngleScrew ( 1.6 , 3.3 , 18.0 , 12.0 , 60.0 , 4.4 , 2.1 , 3.8 ) ;
       } ;
     } ;
+    if ( havingRightWaterProof ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        mirror ( [ 1 , 0 , 0 ] ) {
+          LeftWaterProof ( ) ;
+        } ;
+      } ;
+    } ;
+    if ( havingLeftWaterProof ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        LeftWaterProof ( ) ;
+      } ;
+    } ;
+    if ( havingPumpWaterProof ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        PumpWaterProof ( ) ;
+      } ;
+    } ;
+    if ( havingShieldLatcher ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        WaterShieldLatcher ( 60.0 ) ;
+      } ;
+    }
+    if ( havingPipeHolder ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        WaterPipeHolder ( 10.0 ) ;
+      } ;
+    }
+    if ( havingFrontPlate ) {
+      translate ( [ 0 , 0 , 0 ] ) {
+        WaterFrontPlate ( ) ;
+      } ;
+    }
   } ;
 }
 
@@ -241,7 +279,7 @@ module oriphase_water_cycler_back_panel ( )
         } ;
       } ;
       translate ( [ 110.0 , 44.0 , dig_base ] ) {
-        cube ( size = [ switch_w , switch_h , dig_height ] ) ;
+//        cube ( size = [ switch_w , switch_h , dig_height ] ) ;
       } ;
       translate ( [ ( side / 2.0 ) , 30.0 , -10.0 ] ) {
         cylinder ( r = hole_radius , h = 20.0 ) ;
@@ -460,6 +498,230 @@ module RightAngleScrew ( thickness , acrylic , vertical , horizontal , length , 
             cylinder ( r = bottom_hole , h = thickness + acrylic ) ;
           } ;
         } ;
+      } ;
+    } ;
+  } ;
+}
+
+module LeftWaterProof ( )
+{
+  bwidth  = gap + ( plate * 2 ) ;
+  width   = 10.0 ;
+  length  = 60.0 ;
+  jwidth  = width + bwidth ;
+  jlength = 28.0 ;
+  blength = jlength + bwidth ;
+  gshift  =  5.0 ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ jwidth , length , plate ] ) ;
+      } ;
+      translate ( [ 0.0 , blength , - width + 0.1 ] ) {
+        cube     ( size = [ plate , length - blength , width ] ) ;
+      } ;
+      translate ( [ 0.0 , jlength , plate - 0.1 ] ) {
+        cube     ( size = [ jwidth , bwidth , width ] ) ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ -10.0 , jlength + plate , plate ] ) {
+        cube     ( size = [ jwidth + 20.0 , gap , width ] ) ;
+      } ;
+      translate ( [ gshift , jlength + plate , -10.0 ] ) {
+        cube     ( size = [ jwidth + 20.0 , gap , width + 20.0 ] ) ;
+      } ;
+    } ;
+  } ;
+}
+
+module PumpWaterProof ( )
+{
+  swidth  =  20.0 ;
+  jlength =  80.0 ;
+  jwidth  =  50.0 ;
+  blength = 120.0 ;
+  xlength =  30.0 ;
+  bheight =  20.0 ;
+  bwidth  = ( plate * 2 ) + swidth + jwidth ;
+  cheight =   5.0 ;
+  dhole   =   5.0 ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ bwidth , blength , plate ] ) ;
+      } ;
+      translate ( [ swidth , 0.0 , plate - 0.1 ] ) {
+        difference ( ) {
+          translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+            cube     ( size = [ jwidth + ( plate * 2 ) , blength , bheight ] ) ;
+          } ;
+          translate ( [ plate , plate , -10.0 ] ) {
+            cube     ( size = [ jwidth , blength - ( plate * 2 ) , bheight + 20.0 ] ) ;
+          } ;
+        } ;
+      } ;
+      translate ( [ swidth + plate , plate + xlength , plate - 0.1 ] ) {
+        cube     ( size = [ jwidth + 0.2 , plate , cheight ] ) ;
+      } ;
+      translate ( [ swidth + plate , plate + xlength + jlength , plate - 0.1 ] ) {
+        cube     ( size = [ jwidth + 0.2 , plate , cheight ] ) ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ bwidth - 25.0 , blength - 10.0 , 10.0 ] ) {
+        cube     ( size = [ 15.0 , 30.0 , bheight ] ) ;
+      } ;
+      translate ( [ 10.0 , 55.0 , -10.0 ] ) {
+        cylinder ( d = dhole , h = 20.0 ) ;
+      } ;
+      translate ( [ 10.0 , 90.0 , -10.0 ] ) {
+        cylinder ( d = dhole , h = 20.0 ) ;
+      } ;
+    } ;
+  } ;
+}
+
+module WaterShieldLatcher ( length )
+{
+  plank = 13.0 ;
+  clamp =  8.0 ;
+  hole  =  5.0 ;
+  side  = 12.0 ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ length , plank + clamp + plate  , plate ] ) ;
+      } ;
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ length , clamp + plate , gap + ( plate * 2 ) ] ) ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ -10.0 , -10.0 , plate ] ) {
+        cube     ( size = [ length + 20.0 , clamp + 10.0 , gap ] ) ;
+      } ;
+      translate ( [ side , clamp + plate + ( plank / 2.0 ) , -10.0 ] ) {
+        cylinder ( d = hole , h = 20.0 ) ;
+      } ;
+      translate ( [ length - side , clamp + plate + ( plank / 2.0 ) , -10.0 ] ) {
+        cylinder ( d = hole , h = 20.0 ) ;
+      } ;
+    } ;
+  } ;
+}
+
+module WaterPipeHolder ( length )
+{
+  width  = 24.0 ;
+  height = 15.0 ;
+  throat = 10.0 ;
+  hole   =  6.0 ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube     ( size = [ width + ( plate * 2 ) , height + ( plate * 2 ) , length ] ) ;
+      } ;
+      translate ( [ plate + ( ( width - throat ) / 2 ) , height + ( plate * 2 ) , 0.0 ] ) {
+        cube     ( size = [ throat , hole + plate , length ] ) ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ plate , plate , -10.0 ] ) {
+        cube     ( size = [ width , height , length + 20.0 ] ) ;
+      } ;
+      translate ( [ plate + 5.0 , -10.0 , -10.0 ] ) {
+        cube     ( size = [ width - 10.0 , height , length + 20.0 ] ) ;
+      } ;
+      translate ( [ plate + ( width / 2 ) - 2.0 , height + ( plate * 2 ) + hole - 2.0 , -10.0 ] ) {
+        cube     ( size = [ 4.0 , height , length + 20.0 ] ) ;
+      } ;
+      translate ( [ plate + ( width / 2 ) , height + ( plate * 2 ) + ( hole / 2 ) , -10.0 ] ) {
+        cylinder ( d = hole , h = length + 20.0 ) ;
+      } ;
+    } ;
+  } ;
+}
+
+module WaterFrontPlate ( )
+{
+  width       = 146.0 ;
+  length      =  70.0 ;
+  height      =   6.0 ;
+  side        =  13.0 ;
+  bwidth      =  width  + ( side * 2 ) ;
+  blength     =  length + side ;
+  jgap        = ( plate * 2 ) + gap ;
+  hole_radius =   2.5 ;
+  switch_w    =  13.0 ;
+  switch_h    =  20.0 ;
+  dig_base    = -10.0 ;
+  dig_height  =  50.0 ;
+  margin      =   5.0 ;
+  twidth      =  60.0 ;
+  difference ( ) {
+    union ( ) {
+      translate ( [ 0.0 , 0.0 , 0.0 ] ) {
+        cube ( size = [ bwidth , blength , plate ] ) ;
+      } ;
+      difference ( ) {
+        translate ( [ side , side , plate - 0.1 ] ) {
+          cube ( size = [ width , length , height ] ) ;
+        } ;
+        translate ( [ side + plate , side + plate , plate ] ) {
+          cube ( size = [ width - ( plate * 2 ) , length - ( plate * 2 ) , height + 10.0 ] ) ;
+        } ;
+      } ;
+      difference ( ) {
+        translate ( [ 136.5 , 60.0 , plate - 0.1 ] ) {
+          cylinder ( d = 7.0 , h = 6.0 ) ;
+        } ;
+        translate ( [ 136.5 , 60.0 , plate ] ) {
+          cylinder ( d = 5.5 , h = 6.0 ) ;
+        } ;
+      } ;
+      difference ( ) {
+        translate ( [ 106.5 , 60.0 , plate - 0.1 ] ) {
+          cylinder ( d = 7.0 , h = 6.0 ) ;
+        } ;
+        translate ( [ 106.5 , 60.0 , plate ] ) {
+          cylinder ( d = 5.5 , h = 6.0 ) ;
+        } ;
+      } ;
+    } ;
+    union ( ) {
+      translate ( [ side + plate + margin , side + plate + margin , -10.0 ] ) {
+        cube ( size = [ twidth , length - ( plate * 2 ) - ( margin * 2 ) , height + 20.0 ] ) ;
+      } ;
+      translate ( [ 130.0 , 25.0 , dig_base ] ) {
+        cube ( size = [ switch_w , switch_h , dig_height ] ) ;
+      } ;
+      translate ( [ 136.5 , 60.0 , -10.0 ] ) {
+        cylinder ( d = 3.0 , h = 20.0 ) ;
+      } ;
+      translate ( [ 100.0 , 25.0 , dig_base ] ) {
+        cube ( size = [ switch_w , switch_h , dig_height ] ) ;
+      } ;
+      translate ( [ 106.5 , 60.0 , -10.0 ] ) {
+        cylinder ( d = 3.0 , h = 20.0 ) ;
+      } ;
+      translate ( [ ( side / 2.0 ) , 30.0 , -10.0 ] ) {
+        cylinder ( r = hole_radius , h = 20.0 ) ;
+      } ;
+      translate ( [ ( side / 2.0 ) , 70.0 , -10.0 ] ) {
+        cylinder ( r = hole_radius , h = 20.0 ) ;
+      } ;
+      translate ( [ width + side + ( side / 2.0 ) , 30.0 , -10.0 ] ) {
+        cylinder ( r = hole_radius , h = 20.0 ) ;
+      } ;
+      translate ( [ width + side + ( side / 2.0 ) , 70.0 , -10.0 ] ) {
+        cylinder ( r = hole_radius , h = 20.0 ) ;
+      } ;
+      translate ( [ 40.0 , ( side / 2.0 ) , -10.0 ] ) {
+        cylinder ( r = hole_radius , h = 20.0 ) ;
+      } ;
+      translate ( [ bwidth - 40.0 , ( side / 2.0 ) , -10.0 ] ) {
+        cylinder ( r = hole_radius , h = 20.0 ) ;
       } ;
     } ;
   } ;
