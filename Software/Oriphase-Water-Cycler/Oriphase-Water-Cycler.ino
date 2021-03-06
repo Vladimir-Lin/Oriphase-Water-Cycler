@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Arduino Uno WIFI WeMOS D1 R2
+// Arduino Uno WIFI WeMOS D1 R1
 // Product : Oriphase Water Cycler For Pets
 // Version 1.0.0
 // Author : Foxman, Vladimir Lin, Feng Yun Lin, FYL
@@ -27,7 +27,7 @@ int                BaudRate          = 115200                                ;
 int                EepromSize        = 4096                                  ;
 bool               doDelay           = true                                  ;
 unsigned int       MicrosecondsDelay = 10000                                 ;
-char * VersionMessage = "Oriphase Water Cycler For Pets : Version 2021.03.07.03.41" ;
+char * VersionMessage = "Oriphase Water Cycler For Pets : Version 2021.03.07.05.30" ;
 //////////////////////////////////////////////////////////////////////////////
 // 電源控制器掃描控制點
 //////////////////////////////////////////////////////////////////////////////
@@ -148,12 +148,12 @@ void TurnSolenoidValve       ( bool onOff                                  ) {
   if                         ( onOff                                       ) {
     if                       ( ! SolenoidValve                             ) {
       SolenoidValve = true                                                   ;
-      WriteValue             (  ValveIO , 1                                ) ;
+      WriteValue             (  ValveIO , 0                                ) ;
     }
   } else                                                                     {
     if                       (   SolenoidValve                             ) {
       SolenoidValve = false                                                  ;
-      WriteValue             (  ValveIO , 0                                ) ;
+      WriteValue             (  ValveIO , 1                                ) ;
     }
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -1731,7 +1731,7 @@ void InitializeWaterCycler   (                                             ) {
   // 電磁水閥
   ////////////////////////////////////////////////////////////////////////////
   SetOutput                  ( ValveIO                                     ) ;
-  WriteValue                 ( ValveIO , 0                                 ) ;
+  WriteValue                 ( ValveIO , 1                                 ) ;
   SetInput                   ( ValveSwitch                                 ) ;
   ValveStatus = ReadValue    ( ValveSwitch                                 ) ;
   TurnSolenoidValve          ( false                                       ) ;
