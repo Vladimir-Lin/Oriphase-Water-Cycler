@@ -27,7 +27,7 @@ int                BaudRate          = 115200                                ;
 int                EepromSize        = 4096                                  ;
 bool               doDelay           = true                                  ;
 unsigned int       MicrosecondsDelay = 10000                                 ;
-char * VersionMessage = "Oriphase Water Cycler For Pets : Version 2021.03.06.21.31" ;
+char * VersionMessage = "Oriphase Water Cycler For Pets : Version 2021.03.07.03.41" ;
 //////////////////////////////////////////////////////////////////////////////
 // 電源控制器掃描控制點
 //////////////////////////////////////////////////////////////////////////////
@@ -62,6 +62,9 @@ bool               AssignIP          = false                                 ;
 char               HostIP      [ 4 ]                                         ;
 char               HostGateway [ 4 ]                                         ;
 char               HostNetmask [ 4 ]                                         ;
+bool               ConfigureSAP      = false                                 ;
+char               SapIP       [ 4 ]                                         ;
+char               SapNetmask  [ 4 ]                                         ;
 int                WifiHttpPort      = 80                                    ;
 bool               HttpInitialized   = false                                 ;
 //////////////////////////////////////////////////////////////////////////////
@@ -145,12 +148,12 @@ void TurnSolenoidValve       ( bool onOff                                  ) {
   if                         ( onOff                                       ) {
     if                       ( ! SolenoidValve                             ) {
       SolenoidValve = true                                                   ;
-      WriteValue             (  ValveIO , 0                                ) ;
+      WriteValue             (  ValveIO , 1                                ) ;
     }
   } else                                                                     {
     if                       (   SolenoidValve                             ) {
       SolenoidValve = false                                                  ;
-      WriteValue             (  ValveIO , 1                                ) ;
+      WriteValue             (  ValveIO , 0                                ) ;
     }
   }
   ////////////////////////////////////////////////////////////////////////////
@@ -206,7 +209,10 @@ void WebServerEntry ( )                                                      {
     return                                                                   ;
   }                                                                          ;
   ////////////////////////////////////////////////////////////////////////////
-  IPAddress SIP = WiFi . softAPIP ( )                                        ;
+  IPAddress SIP = WiFi . softAPIP   ( )                                      ;
+  IPAddress LIP = WiFi . localIP    ( )                                      ;
+  IPAddress GIP = WiFi . gatewayIP  ( )                                      ;
+  IPAddress MIP = WiFi . subnetMask ( )                                      ;
   ////////////////////////////////////////////////////////////////////////////
   String WL      ( WaterLevel                                              ) ;
   String CM   = WL . substring ( 0 , 1                                     ) ;
@@ -232,6 +238,31 @@ void WebServerEntry ( )                                                      {
           String ( SIP [ 2 ] ) + String ( "." )                              +
           String ( SIP [ 3 ] )                                               ;
   HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Local IP Address : </span><span>"           ) ;
+  HTML += String ( LIP [ 0 ] ) + String ( "." )                              +
+          String ( LIP [ 1 ] ) + String ( "." )                              +
+          String ( LIP [ 2 ] ) + String ( "." )                              +
+          String ( LIP [ 3 ] )                                               ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Gateway : </span><span>"                    ) ;
+  HTML += String ( GIP [ 0 ] ) + String ( "." )                              +
+          String ( GIP [ 1 ] ) + String ( "." )                              +
+          String ( GIP [ 2 ] ) + String ( "." )                              +
+          String ( GIP [ 3 ] )                                               ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Netmask : </span><span>"                    ) ;
+  HTML += String ( MIP [ 0 ] ) + String ( "." )                              +
+          String ( MIP [ 1 ] ) + String ( "." )                              +
+          String ( MIP [ 2 ] ) + String ( "." )                              +
+          String ( MIP [ 3 ] )                                               ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<br>\n"                                                ) ;
   ////////////////////////////////////////////////////////////////////////////
   HTML += String ( "<div><span>Current Water Level : </span><span>"        ) ;
   HTML += String ( WLS                                                     ) ;
@@ -318,11 +349,11 @@ void WebServerWIFI ( )                                                       {
   ////////////////////////////////////////////////////////////////////////////
   HTML += String ( "<div>"                                                 ) ;
   HTML += String ( "<span>"                                                ) ;
-  HTML += String ( "<a href='/Controller?Method=Settings&Item=WIFI&Turn=On'>Turn On</a>"   ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=WIFI&Use=On'>Turn On</a>"   ) ;
   HTML += String ( "</span>"                                               ) ;
   HTML += String ( "&nbsp;"                                                ) ;
   HTML += String ( "<span>"                                                ) ;
-  HTML += String ( "<a href='/Controller?Method=Settings&Item=WIFI&Turn=Off'>Turn Off</a>" ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=WIFI&Use=Off'>Turn Off</a>" ) ;
   HTML += String ( "</span>"                                               ) ;
   HTML += String ( "</div>"                                                ) ;
   HTML += String ( "<br>\n"                                                ) ;
@@ -421,6 +452,146 @@ void WebServerWIFI ( )                                                       {
   HTML += String ( "<br>\n"                                                ) ;
   HTML += String ( "<br>\n"                                                ) ;
   ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Configure WiFi Static IP Address</div><br>\n"     ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='IpAddressForm'>" ) ;
+  HTML += String ( "<input type='hidden' name='Method' value='Settings'>"  ) ;
+  HTML += String ( "<input type='hidden' name='Item' value='IpAddress'>"   ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='checkbox' id='AssignIpAddress' name='Assign'" ) ;
+  if             ( AssignIP                                                ) {
+    HTML  += String ( "checked=\"checked\""                                ) ;
+  }                                                                          ;
+  HTML += String ( " /><span>Use Static IP Address</span><br>\n"           ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div style='white-space: nowrap;'>"                    ) ;
+  HTML += String ( "<span>IP Address : </span>"                            ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='IP-0' value='" ) ;
+  HTML += String ( int ( HostIP [ 0 ] )                                    ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='IP-1' value='" ) ;
+  HTML += String ( int ( HostIP [ 1 ] )                                    ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='IP-2' value='" ) ;
+  HTML += String ( int ( HostIP [ 2 ] )                                    ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='IP-3' value='" ) ;
+  HTML += String ( int ( HostIP [ 3 ] )                                    ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "</div>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div style='white-space: nowrap;'>"                    ) ;
+  HTML += String ( "<span>Gateway : </span>"                               ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='GATEWAY-0' value='" ) ;
+  HTML += String ( int ( HostGateway [ 0 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='GATEWAY-1' value='" ) ;
+  HTML += String ( int ( HostGateway [ 1 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='GATEWAY-2' value='" ) ;
+  HTML += String ( int ( HostGateway [ 2 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='GATEWAY-3' value='" ) ;
+  HTML += String ( int ( HostGateway [ 3 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "</div>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div style='white-space: nowrap;'>"                    ) ;
+  HTML += String ( "<span>Netmask : </span>"                               ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='NETMASK-0' value='" ) ;
+  HTML += String ( int ( HostNetmask [ 0 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='NETMASK-1' value='" ) ;
+  HTML += String ( int ( HostNetmask [ 1 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='NETMASK-2' value='" ) ;
+  HTML += String ( int ( HostNetmask [ 2 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='NETMASK-3' value='" ) ;
+  HTML += String ( int ( HostNetmask [ 3 ] )                               ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "</div>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='IpAddressForm'>"           ) ;
+  HTML += String ( "Assign IP Address</button>"                            ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Configure Soft Access Point IP Address</div><br>\n"     ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='SapAddressForm'>" ) ;
+  HTML += String ( "<input type='hidden' name='Method' value='Settings'>" ) ;
+  HTML += String ( "<input type='hidden' name='Item' value='SapAddress'>" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='checkbox' id='AssignSapAddress' name='ConfigureSAP'" ) ;
+  if             ( ConfigureSAP                                            ) {
+    HTML  += String ( "checked=\"checked\""                                ) ;
+  }                                                                          ;
+  HTML += String ( " /><span>Assign Soft Access Point IP Address</span><br>\n" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div style='white-space: nowrap;'>"                    ) ;
+  HTML += String ( "<span>IP Address : </span>"                            ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-IP-0' value='" ) ;
+  HTML += String ( int ( SapIP [ 0 ] )                                     ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-IP-1' value='" ) ;
+  HTML += String ( int ( SapIP [ 1 ] )                                     ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-IP-2' value='" ) ;
+  HTML += String ( int ( SapIP [ 2 ] )                                     ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-IP-3' value='" ) ;
+  HTML += String ( int ( SapIP [ 3 ] )                                     ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "</div>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div style='white-space: nowrap;'>"                    ) ;
+  HTML += String ( "<span>Netmask : </span>"                               ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-NETMASK-0' value='" ) ;
+  HTML += String ( int ( SapNetmask [ 0 ] )                                ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-NETMASK-1' value='" ) ;
+  HTML += String ( int ( SapNetmask [ 1 ] )                                ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-NETMASK-2' value='" ) ;
+  HTML += String ( int ( SapNetmask [ 2 ] )                                ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "<span> . </span>"                                      ) ;
+  HTML += String ( "<span><input type='number' min=0 max=255 name='SAP-NETMASK-3' value='" ) ;
+  HTML += String ( int ( SapNetmask [ 3 ] )                                ) ;
+  HTML += String ( "'></span>"                                             ) ;
+  HTML += String ( "</div>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='SapAddressForm'>"          ) ;
+  HTML += String ( "Assign Soft Access Point IP Address</button>"          ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+//  HTML += String ( "<a href='/Controller?Method=Reset'>Reboot</a>\n"       ) ;
+//  HTML += String ( "<br>\n"                                                ) ;
+//  HTML += String ( "<br>\n"                                                ) ;
   HTML += String ( "<a href='/'>Home</a>\n"                                ) ;
   ////////////////////////////////////////////////////////////////////////////
   HTML += String ( "</body>"                                               ) ;
@@ -697,9 +868,9 @@ void WebServerSettings ( )                                                   {
   HTML += String ( "<a href='/Controller?Method=EEPROM'>Write Settings into EEPROM</a>\n" ) ;
   HTML += String ( "<br>\n"                                                ) ;
   HTML += String ( "<br>\n"                                                ) ;
-  HTML += String ( "<a href='/Controller?Method=Reset'>Reboot</a>\n"       ) ;
-  HTML += String ( "<br>\n"                                                ) ;
-  HTML += String ( "<br>\n"                                                ) ;
+//  HTML += String ( "<a href='/Controller?Method=Reset'>Reboot</a>\n"       ) ;
+//  HTML += String ( "<br>\n"                                                ) ;
+//  HTML += String ( "<br>\n"                                                ) ;
   ////////////////////////////////////////////////////////////////////////////
   HTML += String ( "<a href='/'>Home</a>\n"                                ) ;
   ////////////////////////////////////////////////////////////////////////////
@@ -919,14 +1090,65 @@ void WebServerController (                                                 ) {
           HttpServer -> send       ( 302        , "text/plain" , ""        ) ;
           return                                                             ;
         } else
-/*
-bool               AssignIP         = false                                  ;
-char               HostIP      [ 4 ]                                         ;
-char               HostGateway [ 4 ]                                         ;
-char               HostNetmask [ 4 ]                                         ;
-*/
+        if              ( ITEM   == "IpAddress"                            ) {
+          ////////////////////////////////////////////////////////////////////
+          String ASSIGN = HttpServer -> arg ( "Assign" )                     ;
+          ////////////////////////////////////////////////////////////////////
+          if            ( ASSIGN == "on"                                   ) {
+            AssignIP = true                                                  ;
+          } else                                                             {
+            AssignIP = false                                                 ;
+          }                                                                  ;
+          ////////////////////////////////////////////////////////////////////
+          HostIP      [ 0 ] = char ( HttpServer -> arg ( "IP-0"      ) . toInt ( ) ) ;
+          HostIP      [ 1 ] = char ( HttpServer -> arg ( "IP-1"      ) . toInt ( ) ) ;
+          HostIP      [ 2 ] = char ( HttpServer -> arg ( "IP-2"      ) . toInt ( ) ) ;
+          HostIP      [ 3 ] = char ( HttpServer -> arg ( "IP-3"      ) . toInt ( ) ) ;
+          ////////////////////////////////////////////////////////////////////
+          HostGateway [ 0 ] = char ( HttpServer -> arg ( "GATEWAY-0" ) . toInt ( ) ) ;
+          HostGateway [ 1 ] = char ( HttpServer -> arg ( "GATEWAY-1" ) . toInt ( ) ) ;
+          HostGateway [ 2 ] = char ( HttpServer -> arg ( "GATEWAY-2" ) . toInt ( ) ) ;
+          HostGateway [ 3 ] = char ( HttpServer -> arg ( "GATEWAY-3" ) . toInt ( ) ) ;
+          ////////////////////////////////////////////////////////////////////
+          HostNetmask [ 0 ] = char ( HttpServer -> arg ( "NETMASK-0" ) . toInt ( ) ) ;
+          HostNetmask [ 1 ] = char ( HttpServer -> arg ( "NETMASK-1" ) . toInt ( ) ) ;
+          HostNetmask [ 2 ] = char ( HttpServer -> arg ( "NETMASK-2" ) . toInt ( ) ) ;
+          HostNetmask [ 3 ] = char ( HttpServer -> arg ( "NETMASK-3" ) . toInt ( ) ) ;
+          ////////////////////////////////////////////////////////////////////
+          FlashEEPROM   (                                                  ) ;
+          ////////////////////////////////////////////////////////////////////
+          HttpServer -> sendHeader ( "Location" , "/wifi.html" , true      ) ;
+          HttpServer -> send       ( 302        , "text/plain" , ""        ) ;
+          return                                                             ;
+        } else
+        if              ( ITEM   == "SapAddress"                           ) {
+          ////////////////////////////////////////////////////////////////////
+          String ASSIGN = HttpServer -> arg ( "ConfigureSAP" )               ;
+          ////////////////////////////////////////////////////////////////////
+          if            ( ASSIGN == "on"                                   ) {
+            ConfigureSAP = true                                              ;
+          } else                                                             {
+            ConfigureSAP = false                                             ;
+          }                                                                  ;
+          ////////////////////////////////////////////////////////////////////
+          SapIP      [ 0 ] = char ( HttpServer -> arg ( "SAP-IP-0"      ) . toInt ( ) ) ;
+          SapIP      [ 1 ] = char ( HttpServer -> arg ( "SAP-IP-1"      ) . toInt ( ) ) ;
+          SapIP      [ 2 ] = char ( HttpServer -> arg ( "SAP-IP-2"      ) . toInt ( ) ) ;
+          SapIP      [ 3 ] = char ( HttpServer -> arg ( "SAP-IP-3"      ) . toInt ( ) ) ;
+          ////////////////////////////////////////////////////////////////////
+          SapNetmask [ 0 ] = char ( HttpServer -> arg ( "SAP-NETMASK-0" ) . toInt ( ) ) ;
+          SapNetmask [ 1 ] = char ( HttpServer -> arg ( "SAP-NETMASK-1" ) . toInt ( ) ) ;
+          SapNetmask [ 2 ] = char ( HttpServer -> arg ( "SAP-NETMASK-2" ) . toInt ( ) ) ;
+          SapNetmask [ 3 ] = char ( HttpServer -> arg ( "SAP-NETMASK-3" ) . toInt ( ) ) ;
+          ////////////////////////////////////////////////////////////////////
+          FlashEEPROM   (                                                  ) ;
+          ////////////////////////////////////////////////////////////////////
+          HttpServer -> sendHeader ( "Location" , "/wifi.html" , true      ) ;
+          HttpServer -> send       ( 302        , "text/plain" , ""        ) ;
+          return                                                             ;
+        } else
         if              ( ITEM   == "Site"                                 ) {
-          String NAME   = HttpServer -> arg ( "Name" )                       ;
+          String NAME   = HttpServer -> arg ( "Name"        )                ;
           String PASSWD = HttpServer -> arg ( "SapPassword" )                ;
           char site [ 256 ]                                                  ;
           NAME   . toCharArray ( site , 23 )                                 ;
@@ -1272,17 +1494,18 @@ void BuildUpSoftAP           (                                             ) {
   ////////////////////////////////////////////////////////////////////////////
   SetEsp8266WifiAP           (                                             ) ;
   ////////////////////////////////////////////////////////////////////////////
-//  WiFi   . begin             ( ArduinoSite , SapPassword                   ) ;
   WiFi   . softAP            ( ArduinoSite , SapPassword                   ) ;
-//  IPAddress myIP = WiFi.softAPIP();
   if                         ( MDNS . begin ( OriphaseArduino )            ) {
     MDNS . addService        ( "http" , "tcp" , 80                         ) ;
   }                                                                          ;
-//  if                         ( AssignIP                                    ) {
-//    WiFi . config            ( ComposeIP ( HostIP      )                     , // IP Address
-//                               ComposeIP ( HostGateway )                     , // Gateway
-//                               ComposeIP ( HostNetmask )                   ) ; // Netmask
-//  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  if                         ( ConfigureSAP                                ) {
+    delay                    ( 500                                         ) ;
+    WiFi . softAPConfig      ( ComposeIP ( SapIP      )                      ,
+                               ComposeIP ( SapIP      )                      ,
+                               ComposeIP ( SapNetmask )                    ) ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
   WifiConnected = true                                                       ;
   WifiTimestamp = millis     (                                             ) ;
   ////////////////////////////////////////////////////////////////////////////
@@ -1331,10 +1554,16 @@ void BuildUpWifiBoth         (                                             ) {
   ////////////////////////////////////////////////////////////////////////////
   SetEsp8266WifiBoth         (                                             ) ;
   ////////////////////////////////////////////////////////////////////////////
-//  WiFi   . begin             ( ArduinoSite , SapPassword                   ) ;
   WiFi   . softAP            ( ArduinoSite , SapPassword                   ) ;
   if                         ( MDNS . begin ( OriphaseArduino )            ) {
     MDNS . addService        ( "http" , "tcp" , 80                         ) ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  if                         ( ConfigureSAP                                ) {
+    delay                    ( 500                                         ) ;
+    WiFi . softAPConfig      ( ComposeIP ( SapIP      )                      ,
+                               ComposeIP ( SapIP      )                      ,
+                               ComposeIP ( SapNetmask )                    ) ;
   }                                                                          ;
   ////////////////////////////////////////////////////////////////////////////
   ReportWIFI                 (                                             ) ;
@@ -1635,6 +1864,9 @@ typedef struct OriphaseWaterCyclerConfigure                                  {
   int          WaterBasement                                                 ; // 232
   int          HighestWaterLevel                                             ; // 236
   int          LowestWaterLevel                                              ; // 240
+  char         SapIP        [  4 ]                                           ; // 244
+  char         SapNetmask   [  4 ]                                           ; // 248
+  int          ConfigureSAP                                                  ; // 252
 }              OriphaseConfigure                                             ;
 //////////////////////////////////////////////////////////////////////////////
 void FlashEEPROM       ( void                                              ) {
@@ -1655,15 +1887,18 @@ void FlashEEPROM       ( void                                              ) {
   memcpy               ( conf . IP           , HostIP              ,  4    ) ;
   memcpy               ( conf . Gateway      , HostGateway         ,  4    ) ;
   memcpy               ( conf . Netmask      , HostNetmask         ,  4    ) ;
+  memcpy               ( conf . SapIP        , SapIP               ,  4    ) ;
+  memcpy               ( conf . SapNetmask   , SapNetmask          ,  4    ) ;
   ////////////////////////////////////////////////////////////////////////////
   conf . Debug             = char ( Debug               )                    ;
   conf . Console           = char ( Console             )                    ;
   conf . SwitchMode        = char ( PowerSwitchMode     )                    ;
   conf . WifiMode          = char ( WifiMode            )                    ;
-  conf . UseWiFi           = UseWiFi     ? 1 : 0                             ;
-  conf . doDelay           = doDelay     ? 1 : 0                             ;
-  conf . AssignIP          = AssignIP    ? 1 : 0                             ;
-  conf . DetectWater       = DetectWater ? 1 : 0                             ;
+  conf . UseWiFi           = UseWiFi      ? 1 : 0                            ;
+  conf . doDelay           = doDelay      ? 1 : 0                            ;
+  conf . AssignIP          = AssignIP     ? 1 : 0                            ;
+  conf . DetectWater       = DetectWater  ? 1 : 0                            ;
+  conf . ConfigureSAP      = ConfigureSAP ? 1 : 0                            ;
   conf . BaudRate          = BaudRate                                        ;
   conf . MicrosecondsDelay = MicrosecondsDelay                               ;
   conf . HttpPort          = WifiHttpPort                                    ;
@@ -1715,18 +1950,21 @@ void ReloadEEPROM      (                                                   ) {
   SiteUsername = strdup ( conf . Username                                  ) ;
   SitePassword = strdup ( conf . Password                                  ) ;
   ////////////////////////////////////////////////////////////////////////////
-  memcpy               ( HostIP              , conf . IP      , 4          ) ;
-  memcpy               ( HostGateway         , conf . Gateway , 4          ) ;
-  memcpy               ( HostNetmask         , conf . Netmask , 4          ) ;
+  memcpy               ( HostIP              , conf . IP         , 4       ) ;
+  memcpy               ( HostGateway         , conf . Gateway    , 4       ) ;
+  memcpy               ( HostNetmask         , conf . Netmask    , 4       ) ;
+  memcpy               ( SapIP               , conf . SapIP      , 4       ) ;
+  memcpy               ( SapNetmask          , conf . SapNetmask , 4       ) ;
   ////////////////////////////////////////////////////////////////////////////
   Debug               = int ( conf . Debug                                 ) ;
   Console             = int ( conf . Console                               ) ;
   WifiMode            = int ( conf . WifiMode                              ) ;
   PowerSwitchMode     = int ( conf . SwitchMode                            ) ;
-  doDelay             =     ( conf . doDelay     > 0                       ) ;
-  UseWiFi             =     ( conf . UseWiFi     > 0                       ) ;
-  AssignIP            =     ( conf . AssignIP    > 0                       ) ;
-  DetectWater         =     ( conf . DetectWater > 0                       ) ;
+  doDelay             =     ( conf . doDelay      > 0                      ) ;
+  UseWiFi             =     ( conf . UseWiFi      > 0                      ) ;
+  AssignIP            =     ( conf . AssignIP     > 0                      ) ;
+  DetectWater         =     ( conf . DetectWater  > 0                      ) ;
+  ConfigureSAP        =     ( conf . ConfigureSAP > 0                      ) ;
   BaudRate            =       conf . BaudRate                                ;
   MicrosecondsDelay   =       conf . MicrosecondsDelay                       ;
   WifiHttpPort        =       conf . HttpPort                                ;
