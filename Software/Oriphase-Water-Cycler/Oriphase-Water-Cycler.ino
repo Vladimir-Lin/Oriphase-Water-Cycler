@@ -1,363 +1,22 @@
 //////////////////////////////////////////////////////////////////////////////
-// Arduino Uno WIFI WeMOS D1 R1
+// Arduino Uno WIFI WeMOS D1 R2
 // Product : Oriphase Water Cycler For Pets
 // Version 1.0.0
-// Author : Foxman, Vladimir Lin, FYL
+// Author : Foxman, Vladimir Lin, Feng Yun Lin, FYL
 // 寵物飲水機
 //////////////////////////////////////////////////////////////////////////////
 #include "EEPROM.h"
 #include "ESP8266WiFi.h"
 #include "ESP8266WebServer.h"
 #include "ESP8266mDNS.h"
+#include "FS.h"
 //////////////////////////////////////////////////////////////////////////////
-// EEPROM函數庫
+// AITK For Arduino WeMOS
 //////////////////////////////////////////////////////////////////////////////
-// +| WriteToEEPROM |+
-// 寫入EEPROM
-//////////////////////////////////////////////////////////////////////////////
-void WriteToEEPROM  ( int    address                                         ,
-                      int    len                                             ,
-                      char * Buffer                                          ,
-                      bool   commit = true                                 ) {
-  for               ( int i = 0 ; i < len ; i++                            ) {
-    EEPROM . write  ( address + i , Buffer [ i ]                           ) ;
-  }                                                                          ;
-  if                ( commit                                               ) {
-    EEPROM . commit (                                                      ) ;
-  }                                                                          ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| WriteToEEPROM |-
-//////////////////////////////////////////////////////////////////////////////
-// +| ReadFromEEPROM |+
-// 讀取EEPROM
-//////////////////////////////////////////////////////////////////////////////
-void ReadFromEEPROM ( int address , int len , char * Buffer                ) {
-  for               ( int i = 0 ; i < len ; i++                            ) {
-    Buffer [ i ] = EEPROM . read  ( address + i                            ) ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| ReadFromEEPROM |-
-//////////////////////////////////////////////////////////////////////////////
-// ESP-8266 WIFI函數庫
-//////////////////////////////////////////////////////////////////////////////
-// +| SetEsp8266WifiSTA |+
-// 設定WIFI為STA模式
-//////////////////////////////////////////////////////////////////////////////
-void SetEsp8266WifiSTA  (                                                  ) {
-  WiFi . mode           ( WIFI_STA                                         ) ;
-  WiFi . disconnect     (                                                  ) ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| SetEsp8266WifiSTA |-
-//////////////////////////////////////////////////////////////////////////////
-// +| SetEsp8266WifiAP |+
-// 設定WIFI為AP模式
-//////////////////////////////////////////////////////////////////////////////
-void SetEsp8266WifiAP   (                                                  ) {
-  WiFi . mode           ( WIFI_AP                                          ) ;
-  WiFi . disconnect     (                                                  ) ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// +| SetEsp8266WifiBoth |+
-// 設定WIFI為雙模式
-//////////////////////////////////////////////////////////////////////////////
-void SetEsp8266WifiBoth (                                                  ) {
-  WiFi . mode           ( WIFI_AP_STA                                      ) ;
-  WiFi . disconnect     (                                                  ) ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// +| SetEsp8266WifiOff |+
-// 設定WIFI為關閉
-//////////////////////////////////////////////////////////////////////////////
-void SetEsp8266WifiOff  (                                                  ) {
-  WiFi . mode           ( WIFI_OFF                                         ) ;
-  WiFi . disconnect     (                                                  ) ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| SetEsp8266WifiSTA |-
-//////////////////////////////////////////////////////////////////////////////
-// +| GetEsp8266WifiNetworks |+
-// 掃描WIFI網路
-//////////////////////////////////////////////////////////////////////////////
-int GetEsp8266WifiNetworks ( )                                               {
-  return WiFi . scanNetworks ( )                                             ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| GetEsp8266WifiNetworks |-
-//////////////////////////////////////////////////////////////////////////////
-// +| PrintEsp8266WifiStation |+
-// 列出現有WIFI狀況
-//////////////////////////////////////////////////////////////////////////////
-int PrintEsp8266WifiStation ( int id )                                       {
-  bool encrypt =   ( WiFi . encryptionType ( id ) == ENC_TYPE_NONE )         ;
-  Serial . print   ( id + 1             )                                    ;
-  Serial . print   ( " : "              )                                    ;
-  Serial . print   ( WiFi . SSID ( id ) )                                    ;
-  Serial . print   ( " ("               )                                    ;
-  Serial . print   ( WiFi . RSSI ( id ) )                                    ;
-  Serial . print   ( ")"                )                                    ;
-  Serial . println ( encrypt ? "" : "*" )                                    ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| PrintEsp8266WifiStation |-
-//////////////////////////////////////////////////////////////////////////////
-// Arduino Uno Wifi WeMOS D1 R2讀寫函數
-//////////////////////////////////////////////////////////////////////////////
-// +| SetOutput |+
-// 設定輸出腳位
-//////////////////////////////////////////////////////////////////////////////
-void SetOutput        ( int id       )                                       {
-  switch              (     id       )                                       {
-    case  2 : pinMode ( D2  , OUTPUT ) ; break                               ;
-    case  3 : pinMode ( D3  , OUTPUT ) ; break                               ;
-    case  4 : pinMode ( D4  , OUTPUT ) ; break                               ;
-    case  5 : pinMode ( D5  , OUTPUT ) ; break                               ;
-    case  6 : pinMode ( D6  , OUTPUT ) ; break                               ;
-    case  7 : pinMode ( D7  , OUTPUT ) ; break                               ;
-    case  8 : pinMode ( D8  , OUTPUT ) ; break                               ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| SetOutput |-
-//////////////////////////////////////////////////////////////////////////////
-// +| SetInput |+
-// 設定輸入腳位
-//////////////////////////////////////////////////////////////////////////////
-void SetInput         ( int id             )                                 {
-  switch              (     id             )                                 {
-    case  2 : pinMode ( D2  , INPUT_PULLUP ) ; break                         ;
-    case  3 : pinMode ( D3  , INPUT_PULLUP ) ; break                         ;
-    case  4 : pinMode ( D4  , INPUT_PULLUP ) ; break                         ;
-    case  5 : pinMode ( D5  , INPUT_PULLUP ) ; break                         ;
-    case  6 : pinMode ( D6  , INPUT_PULLUP ) ; break                         ;
-    case  7 : pinMode ( D7  , INPUT_PULLUP ) ; break                         ;
-    case  8 : pinMode ( D8  , INPUT_PULLUP ) ; break                         ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| SetInput |-
-//////////////////////////////////////////////////////////////////////////////
-// +| SetPin |+
-// 指定腳位作用
-//////////////////////////////////////////////////////////////////////////////
-void SetPin   ( int id , int mode                                          ) {
-  if          ( mode == 0                                                  ) {
-    SetInput  ( id                                                         ) ;
-  } else                                                                     {
-    SetOutput ( id                                                         ) ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| SetPin |-
-//////////////////////////////////////////////////////////////////////////////
-// +| WriteHigh |+
-// 寫入高電位
-//////////////////////////////////////////////////////////////////////////////
-void WriteHigh             ( int id     )                                    {
-  switch                   (     id     )                                    {
-    case  2 : digitalWrite ( D2  , HIGH ) ; break                            ;
-    case  3 : digitalWrite ( D3  , HIGH ) ; break                            ;
-    case  4 : digitalWrite ( D4  , HIGH ) ; break                            ;
-    case  5 : digitalWrite ( D5  , HIGH ) ; break                            ;
-    case  6 : digitalWrite ( D6  , HIGH ) ; break                            ;
-    case  7 : digitalWrite ( D7  , HIGH ) ; break                            ;
-    case  8 : digitalWrite ( D8  , HIGH ) ; break                            ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| WriteHigh |-
-//////////////////////////////////////////////////////////////////////////////
-// +| WriteLow |+
-// 寫入低電位
-//////////////////////////////////////////////////////////////////////////////
-void WriteLow              ( int id    )                                     {
-  switch                   (     id    )                                     {
-    case  2 : digitalWrite ( D2  , LOW ) ; break                             ;
-    case  3 : digitalWrite ( D3  , LOW ) ; break                             ;
-    case  4 : digitalWrite ( D4  , LOW ) ; break                             ;
-    case  5 : digitalWrite ( D5  , LOW ) ; break                             ;
-    case  6 : digitalWrite ( D6  , LOW ) ; break                             ;
-    case  7 : digitalWrite ( D7  , LOW ) ; break                             ;
-    case  8 : digitalWrite ( D8  , LOW ) ; break                             ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| WriteLow |-
-//////////////////////////////////////////////////////////////////////////////
-// +| WriteValue |+
-// 指定腳位特定值
-//////////////////////////////////////////////////////////////////////////////
-void WriteValue ( int id , int mode                                        ) {
-  if            ( mode == 0                                                ) {
-    WriteLow    (     id                                                   ) ;
-  } else                                                                     {
-    WriteHigh   (     id                                                   ) ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| WriteValue |-
-//////////////////////////////////////////////////////////////////////////////
-// +| ReadValue |+
-// 讀取腳位值
-//////////////////////////////////////////////////////////////////////////////
-int ReadValue                    ( int id                                  ) {
-  switch                         ( id                                      ) {
-    case  2 : return digitalRead ( D2                                      ) ;
-    case  3 : return digitalRead ( D3                                      ) ;
-    case  4 : return digitalRead ( D4                                      ) ;
-    case  5 : return digitalRead ( D5                                      ) ;
-    case  6 : return digitalRead ( D6                                      ) ;
-    case  7 : return digitalRead ( D7                                      ) ;
-    case  8 : return digitalRead ( D8                                      ) ;
-  }                                                                          ;
-  return 0                                                                   ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| ReadValue |-
-//////////////////////////////////////////////////////////////////////////////
-// +| WriteAnalog |+
-// 寫入類比腳位
-//////////////////////////////////////////////////////////////////////////////
-void WriteAnalog         ( int id , int value )                              {
-  switch                 (     id             )                              {
-    case 0 : analogWrite ( 0      ,     value ) ; break                      ;
-  }
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| WriteAnalog |-
-//////////////////////////////////////////////////////////////////////////////
-// +| ReadAnalog |+
-// 讀取類比腳位
-//////////////////////////////////////////////////////////////////////////////
-int ReadAnalog                  ( int id )                                   {
-  switch                        (     id )                                   {
-    case  0 : return analogRead ( 0      )                                   ;
-  }                                                                          ;
-  return 0                                                                   ;
-}
-//////////////////////////////////////////////////////////////////////////////
-// -| ReadAnalog |-
-//////////////////////////////////////////////////////////////////////////////
-// 控制電源類別
-//////////////////////////////////////////////////////////////////////////////
-class PowerController                                                        {
-  ////////////////////////////////////////////////////////////////////////////
-  public                                                                     :
-    //////////////////////////////////////////////////////////////////////////
-    PowerController ( int  output                                            ,
-                      int  input                                             ,
-                      int  mode    = 0                                       ,
-                      bool lowAsOn = true                                  ) {
-      OutputPin     = output                                                 ;
-      InputPin      = input                                                  ;
-      CurrentOutput = false                                                  ;
-      CurrentInput  = false                                                  ;
-      LowAsOn       = lowAsOn                                                ;
-      SwitchMode    = mode                                                   ;
-      SetPin ( input  , 0 )                                                  ;
-      SetPin ( output , 1 )                                                  ;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 設定電源控制模式
-    // 0 - Switch Mode  : 切換模式
-    // 1 - Sync Mode    : 同步模式
-    // 2 - Isolate Mode : 孤立模式
-    //////////////////////////////////////////////////////////////////////////
-    void setSwitch  ( int mode )                                             {
-      SwitchMode = mode                                                      ;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 同步開關狀態
-    //////////////////////////////////////////////////////////////////////////
-    bool GetInput (void)                                                     {
-      int  v  = ReadValue ( InputPin )                                       ;
-      CurrentInput = ( v <= 0 )                                              ;
-      return CurrentInput                                                    ;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 自動探測開關與電源
-    //////////////////////////////////////////////////////////////////////////
-    bool Probe                 ( void                                      ) {
-      int  v       = ReadValue ( InputPin                                  ) ;
-      bool on      =           ( v <= 0                                    ) ;
-      bool changed = false                                                   ;
-      switch                   ( SwitchMode                                ) {
-        // 0 - Switch Mode
-        case 0                                                               :
-          if                   ( CurrentInput  != on                       ) {
-            CurrentInput = on                                                ;
-            Switch             (                                           ) ;
-            changed      = true                                              ;
-          }
-        break                                                                ;
-        // 1 - Sync Mode
-        case 1                                                               :
-          if                   ( CurrentInput  != on                       ) {
-            CurrentInput = on                                                ;
-            changed      = true                                              ;
-          }
-          if                   ( CurrentOutput != on                       ) {
-            Turn               ( on                                        ) ;
-            changed      = true                                              ;
-          }
-        break                                                                ;
-        // 2 - Isolate Mode
-        case 2                                                               :
-          if                   ( CurrentInput  != on                       ) {
-            changed = true                                                   ;
-          }
-          CurrentInput   = on                                                ;
-        break                                                                ;
-      }
-      return changed                                                         ;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 開關
-    //////////////////////////////////////////////////////////////////////////
-    void Turn ( bool OnOff )                                                 {
-      if ( CurrentOutput == OnOff )                                          {
-        return                                                               ;
-      }
-      CurrentOutput = OnOff                                                  ;
-      if ( LowAsOn )                                                         {
-        WriteValue ( OutputPin , OnOff ? 0 : 1 )                             ;
-      } else                                                                 {
-        WriteValue ( OutputPin , OnOff ? 1 : 0 )                             ;
-      }
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 切換電源
-    //////////////////////////////////////////////////////////////////////////
-    void Switch ( void )                                                     {
-      Turn ( CurrentOutput ? false : true )                                  ;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 現有電源狀態
-    //////////////////////////////////////////////////////////////////////////
-    bool Power ( void )                                                      {
-      return CurrentOutput                                                   ;
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 現有開關狀態
-    //////////////////////////////////////////////////////////////////////////
-    bool InputNow ( void )                                                   {
-      return CurrentInput                                                    ;
-    }
-    //////////////////////////////////////////////////////////////////////////
-  protected                                                                  :
-    //////////////////////////////////////////////////////////////////////////
-    int  OutputPin                                                           ;
-    int  InputPin                                                            ;
-    bool CurrentOutput                                                       ;
-    bool CurrentInput                                                        ;
-    bool LowAsOn                                                             ;
-    int  SwitchMode                                                          ;
-    //////////////////////////////////////////////////////////////////////////
-  private                                                                    :
-    //////////////////////////////////////////////////////////////////////////
-}                                                                            ;
+#include <AitkUnoGPIOs.h>
+#include <AitkWeMosEEPROM.h>
+#include <AitkWeMosWiFi.h>
+#include <AitkWeMosPowerController.h>
 //////////////////////////////////////////////////////////////////////////////
 // 系統參數
 //////////////////////////////////////////////////////////////////////////////
@@ -368,7 +27,7 @@ int                BaudRate          = 115200                                ;
 int                EepromSize        = 4096                                  ;
 bool               doDelay           = true                                  ;
 unsigned int       MicrosecondsDelay = 10000                                 ;
-char * VersionMessage = "Oriphase Water Cycler For Pets : Version 2021.03.02.04.43" ;
+char * VersionMessage = "Oriphase Water Cycler For Pets : Version 2021.03.06.21.31" ;
 //////////////////////////////////////////////////////////////////////////////
 // 電源控制器掃描控制點
 //////////////////////////////////////////////////////////////////////////////
@@ -382,7 +41,7 @@ int                PumpSwitch        = 0                                     ;
 bool               DetectWater       = true                                  ;
 int                WaterLevel        = 6000                                  ;
 int                WaterBasement     = 4000                                  ;
-int                HighestWaterLevel = 7200                                  ;
+int                HighestWaterLevel = 6600                                  ;
 int                LowestWaterLevel  = 4400                                  ;
 //////////////////////////////////////////////////////////////////////////////
 bool               RewriteEEPROM     = false                                 ;
@@ -409,7 +68,75 @@ bool               HttpInitialized   = false                                 ;
 PowerController  * PC                                                        ;
 bool               SolenoidValve     = false                                 ;
 int                ValveIO           = 3                                     ;
+int                ValveSwitch       = 6                                     ;
+int                ValveStatus       = 0                                     ;
+bool               CareValve         = false                                 ;
 ESP8266WebServer * HttpServer        = nullptr                               ;
+//////////////////////////////////////////////////////////////////////////////
+String StatusToJson          ( void                                        ) {
+  ////////////////////////////////////////////////////////////////////////////
+  String JSON                                                                ;
+  ////////////////////////////////////////////////////////////////////////////
+  JSON    = String           ( "{ "                                        ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  // PumpPower
+  ////////////////////////////////////////////////////////////////////////////
+  JSON   += String           ( "\"Pump\""                                  ) ;
+  JSON   += String           ( " : "                                       ) ;
+  if                         ( PumpPower                                   ) {
+    JSON += String           ( "1"                                         ) ;
+  } else                                                                     {
+    JSON += String           ( "0"                                         ) ;
+  }                                                                          ;
+  JSON   += String           ( " , "                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  // SolenoidValve
+  ////////////////////////////////////////////////////////////////////////////
+  JSON   += String           ( "\"Valve\""                                 ) ;
+  JSON   += String           ( " : "                                       ) ;
+  if                         ( SolenoidValve                               ) {
+    JSON += String           ( "1"                                         ) ;
+  } else                                                                     {
+    JSON += String           ( "0"                                         ) ;
+  }                                                                          ;
+  JSON   += String           ( " , "                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  // DetectWater
+  ////////////////////////////////////////////////////////////////////////////
+  JSON   += String           ( "\"DetectWater\""                           ) ;
+  JSON   += String           ( " : "                                       ) ;
+  if                         ( DetectWater                                 ) {
+    JSON += String           ( "1"                                         ) ;
+  } else                                                                     {
+    JSON += String           ( "0"                                         ) ;
+  }                                                                          ;
+  JSON   += String           ( " , "                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  // WaterLevel
+  ////////////////////////////////////////////////////////////////////////////
+  JSON   += String           ( "\"WaterLevel\""                            ) ;
+  JSON   += String           ( " : "                                       ) ;
+  JSON   += String           ( WaterLevel                                  ) ;
+  JSON   += String           ( " , "                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  // Water Basement
+  ////////////////////////////////////////////////////////////////////////////
+  JSON   += String           ( "\"Basement\""                              ) ;
+  JSON   += String           ( " : "                                       ) ;
+  JSON   += String           ( WaterBasement                               ) ;
+  JSON   += String           ( " , "                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  // Millis
+  ////////////////////////////////////////////////////////////////////////////
+  int dtm = millis           (                                             ) ;
+  JSON   += String           ( "\"Millis\""                                ) ;
+  JSON   += String           ( " : "                                       ) ;
+  JSON   += String           ( dtm                                         ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  JSON   += String           ( " }"                                        ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  return JSON                                                                ;
+}
 //////////////////////////////////////////////////////////////////////////////
 // 電磁水閥開關
 //////////////////////////////////////////////////////////////////////////////
@@ -425,6 +152,20 @@ void TurnSolenoidValve       ( bool onOff                                  ) {
       SolenoidValve = false                                                  ;
       WriteValue             (  ValveIO , 1                                ) ;
     }
+  }
+  ////////////////////////////////////////////////////////////////////////////
+}
+//////////////////////////////////////////////////////////////////////////////
+// 切換電磁水閥
+//////////////////////////////////////////////////////////////////////////////
+void ChangeSolenoidValve     ( void                                        ) {
+  ////////////////////////////////////////////////////////////////////////////
+  if                         ( SolenoidValve                               ) {
+    TurnSolenoidValve        ( false                                       ) ;
+    UpdateValveStatus        (                                             ) ;
+  } else                                                                     {
+    TurnSolenoidValve        ( true                                        ) ;
+    UpdateValveStatus        (                                             ) ;
   }
   ////////////////////////////////////////////////////////////////////////////
 }
@@ -451,15 +192,13 @@ void UpdatePumpStatus       ( void                                         ) {
   bool in = PC -> InputNow  (                                              ) ;
 }
 //////////////////////////////////////////////////////////////////////////////
-// 重置函數
-//////////////////////////////////////////////////////////////////////////////
-void (* resetFunc) (void) = 0                                                ;
-//////////////////////////////////////////////////////////////////////////////
 // 建立IP Address封包
 //////////////////////////////////////////////////////////////////////////////
 IPAddress ComposeIP ( char * ip )                                            {
   return IPAddress ( ip [ 0 ] , ip [ 1 ] , ip [ 2 ] , ip [ 3 ] )             ;
 }
+//////////////////////////////////////////////////////////////////////////////
+// 主控制網頁
 //////////////////////////////////////////////////////////////////////////////
 void WebServerEntry ( )                                                      {
   ////////////////////////////////////////////////////////////////////////////
@@ -467,54 +206,766 @@ void WebServerEntry ( )                                                      {
     return                                                                   ;
   }                                                                          ;
   ////////////////////////////////////////////////////////////////////////////
-  HttpServer -> send                                                         (
-    200                                                                      ,
-    "text/html"                                                              ,
-    VersionMessage                                                         ) ;
+  IPAddress SIP = WiFi . softAPIP ( )                                        ;
   ////////////////////////////////////////////////////////////////////////////
-}
-//////////////////////////////////////////////////////////////////////////////
-void WebServerWIFI ( )                                                       {
+  String WL      ( WaterLevel                                              ) ;
+  String CM   = WL . substring ( 0 , 1                                     ) ;
+  String TAIL = WL . substring ( 1                                         ) ;
+  String WLS  = CM + String ( "." ) + TAIL                                   ;
   ////////////////////////////////////////////////////////////////////////////
   String HTML                                                                ;
-  String LINE                                                                ;
-  int    totalNetworks                                                       ;
-  bool   encrypt                                                             ;
   ////////////////////////////////////////////////////////////////////////////
-  if ( HttpServer == nullptr )                                               {
-    return                                                                   ;
-  }                                                                          ;
+  HTML  = String ( "<!DOCTYPE html>"                                       ) ;
+  HTML += String ( "<html>"                                                ) ;
+  HTML += String ( "<head>"                                                ) ;
+  HTML += String ( "</head>"                                               ) ;
+  HTML += String ( "<body>"                                                ) ;
   ////////////////////////////////////////////////////////////////////////////
-  totalNetworks = GetEsp8266WifiNetworks ( )                                 ;
-  for ( int i = 0 ; i < totalNetworks ; i++ )                                {
-    encrypt  = ( WiFi . encryptionType ( i ) == ENC_TYPE_NONE )              ;
-    LINE     = String ( i + 1 , DEC         )                                ;
-    LINE    += String ( " : "               )                                ;
-    LINE    += String ( WiFi . SSID ( i )   )                                ;
-    LINE    += String ( " ("                )                                ;
-    LINE    += String ( WiFi . RSSI ( i )   )                                ;
-    LINE    += String ( ")"                 )                                ;
-    LINE    += String ( encrypt ? "" : " *" )                                ;
-    if ( ( i + 1 ) < totalNetworks )                                         {
-      LINE  += String ( "<br>\n"            )                                ;
-    }                                                                        ;
-    HTML    += LINE                                                          ;
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( VersionMessage                                          ) ;
+  HTML += String ( "</div>\n"                                              ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Soft Access Point : </span><span>"          ) ;
+  HTML += String ( SIP [ 0 ] ) + String ( "." )                              +
+          String ( SIP [ 1 ] ) + String ( "." )                              +
+          String ( SIP [ 2 ] ) + String ( "." )                              +
+          String ( SIP [ 3 ] )                                               ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Current Water Level : </span><span>"        ) ;
+  HTML += String ( WLS                                                     ) ;
+  HTML += String ( "</span>&nbsp;<span>cm</span></div>\n"                  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Pump : </span><span>"                       ) ;
+  if             ( PumpPower                                               ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
   }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Valve : </span><span>"                      ) ;
+  if             ( SolenoidValve                                           ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Detect Water Level : </span><span>"         ) ;
+  if             ( DetectWater                                             ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += "<br>\n"                                                           ;
+  HTML += String ( "<div><label>Menu</label></div>"                        ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<ul>"                                                  ) ;
+  HTML += String ( "<li><a href='/wifi.html'>WiFi</a></li>\n"              ) ;
+  HTML += String ( "<li><a href='/control.html'>Control</a></li>\n"        ) ;
+  HTML += String ( "<li><a href='/settings.html'>Settings</a></li>\n"      ) ;
+  HTML += String ( "</ul>\n"                                               ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  int dtm = millis (                                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>System Millis : </span><span>"              ) ;
+  HTML += String ( dtm                                                     ) ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</body>"                                               ) ;
+  HTML += String ( "</html>"                                               ) ;
   ////////////////////////////////////////////////////////////////////////////
   HttpServer -> send ( 200 , "text/html" , HTML                            ) ;
   ////////////////////////////////////////////////////////////////////////////
 }
 //////////////////////////////////////////////////////////////////////////////
-void WebServerStatus ( )                                                     {
+void WebServerWIFI ( )                                                       {
   ////////////////////////////////////////////////////////////////////////////
   if ( HttpServer == nullptr )                                               {
     return                                                                   ;
   }                                                                          ;
   ////////////////////////////////////////////////////////////////////////////
-  HttpServer -> send                                                         (
-    200                                                                      ,
-    "text/html"                                                              ,
-    "Oriphase Water Cycler : Status"                                       ) ;
+  String HTML                                                                ;
+  String SSID                                                                ;
+  String LINE                                                                ;
+  String CurrentSSID ( WifiSSID )                                            ;
+  int    totalNetworks                                                       ;
+  bool   encrypt                                                             ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML  = String ( "<!DOCTYPE html>"                                       ) ;
+  HTML += String ( "<html>"                                                ) ;
+  HTML += String ( "<head>"                                                ) ;
+  HTML += String ( "</head>"                                               ) ;
+  HTML += String ( "<body>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( VersionMessage                                          ) ;
+  HTML += String ( "</div>\n"                                              ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Use WiFi Controller : </span><span>"        ) ;
+  if             ( UseWiFi                                                 ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=WIFI&Turn=On'>Turn On</a>"   ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "&nbsp;"                                                ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=WIFI&Turn=Off'>Turn Off</a>" ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Configure WiFi Access Point Site Name and Password</div><br>\n" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='SiteNameForm'>" ) ;
+  HTML += String ( "<input type='hidden' id='Method' name='Method' value='Settings'>" ) ;
+  HTML += String ( "<input type='hidden' id='Item' name='Item' value='Site'>" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<label for='SiteName'>Site : </label>\n"               ) ;
+  HTML += String ( "<input type='text' id='SiteName' name='Name' value='"  ) ;
+  HTML += String ( ArduinoSite                                             ) ;
+  HTML += String ( "' />"                                                  ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<label for='PasswordSap'>Soft Access Point Password : </label>\n" ) ;
+  HTML += String ( "<input type='text' id='PasswordSap' name='SapPassword' value='"  ) ;
+  HTML += String ( SapPassword                                             ) ;
+  HTML += String ( "' />"                                                  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='SiteNameForm'>"            ) ;
+  HTML += String ( "Setup Wi-Fi Access Point Site Name and Password</button>" ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Configure WiFi Mode</div><br>\n"                  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='WiFiModeForm'>" ) ;
+  HTML += String ( "<input type='hidden' id='Method' name='Method' value='Settings'>" ) ;
+  HTML += String ( "<input type='hidden' id='Item' name='Item' value='WiFiMode'>" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='radio' name='Mode' value='1'"          ) ;
+  if                ( WifiMode == 1                                        ) {
+    HTML  += String ( " checked"                                           ) ;
+  }                                                                          ;
+  HTML    += String ( " /><span>Soft Access Point</span><br>\n"            ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='radio' name='Mode' value='2'"          ) ;
+  if                ( WifiMode == 2                                        ) {
+    HTML  += String ( " checked"                                           ) ;
+  }                                                                          ;
+  HTML    += String ( " /><span>Station</span><br>\n"                      ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='radio' name='Mode' value='3'"          ) ;
+  if                ( WifiMode == 3                                        ) {
+    HTML  += String ( " checked"                                           ) ;
+  }                                                                          ;
+  HTML    += String ( " /><span>Soft Access Point and Station</span><br>\n" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='WiFiModeForm'>"            ) ;
+  HTML += String ( "Setup Wi-Fi Mode</button>"                             ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Configure WiFi Connection</div><br>\n"            ) ;
+  HTML += String ( "<div><form action='/Controller' method='GET' id='WiFiForm'>" ) ;
+  HTML += String ( "<input type='hidden' name='Method' value='WiFi' />\n"  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  totalNetworks = GetEsp8266WifiNetworks ( )                                 ;
+  for ( int i = 0 ; i < totalNetworks ; i++ )                                {
+    encrypt  = ( WiFi . encryptionType ( i ) == ENC_TYPE_NONE )              ;
+    SSID     = String ( WiFi . SSID ( i )   )                                ;
+    LINE     = SSID                                                          ;
+    LINE    += String ( " ("                )                                ;
+    LINE    += String ( WiFi . RSSI ( i )   )                                ;
+    LINE    += String ( ")"                 )                                ;
+    LINE    += String ( encrypt ? "" : " *" )                                ;
+    HTML    += String ( "<input type='radio' name='SSID' value='"          ) ;
+    HTML    += SSID                                                          ;
+    HTML    += String ( "'"                                                ) ;
+    if                ( SSID == CurrentSSID                                ) {
+      HTML  += String ( " checked"                                         ) ;
+    }                                                                        ;
+    HTML    += String ( " /><span>"                                        ) ;
+    HTML    += LINE                                                          ;
+    HTML    += String ( "</span>"                                          ) ;
+    HTML    += String ( "<br>\n"                                           ) ;
+  }                                                                          ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<label for='SsidPassword'>Password : </label>\n"       ) ;
+  HTML += String ( "<input type='password' id='SsidPassword' name='Password'>" ) ;
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='WiFiForm'>"                ) ;
+  HTML += String ( "Setup Wi-Fi</button>"                                  ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<a href='/'>Home</a>\n"                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</body>"                                               ) ;
+  HTML += String ( "</html>"                                               ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HttpServer -> send ( 200 , "text/html" , HTML                            ) ;
+  ////////////////////////////////////////////////////////////////////////////
+}
+//////////////////////////////////////////////////////////////////////////////
+void WebServerControl ( )                                                    {
+  ////////////////////////////////////////////////////////////////////////////
+  if ( HttpServer == nullptr )                                               {
+    return                                                                   ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  String HTML                                                                ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML  = String ( "<!DOCTYPE html>"                                       ) ;
+  HTML += String ( "<html>"                                                ) ;
+  HTML += String ( "<head>"                                                ) ;
+  HTML += String ( "</head>"                                               ) ;
+  HTML += String ( "<body>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( VersionMessage                                          ) ;
+  HTML += String ( "</div>\n"                                              ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Pump : </span><span>"                       ) ;
+  if             ( PumpPower                                               ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Water&Turn=On'>Turn On</a>"   ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "&nbsp;"                                                ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Water&Turn=Off'>Turn Off</a>" ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "&nbsp;"                                                ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Water&Turn=Switch'>Switch</a>" ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Valve : </span><span>"                      ) ;
+  if             ( SolenoidValve                                           ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Valve&Turn=On'>Turn On</a>"   ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "&nbsp;"                                                ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Valve&Turn=Off'>Turn Off</a>" ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Detect Water Level : </span><span>"         ) ;
+  if             ( DetectWater                                             ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=Level&Turn=On'>Turn On</a>"   ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "&nbsp;"                                                ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=Level&Turn=Off'>Turn Off</a>" ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='WaterBasementForm'>" ) ;
+  HTML += String ( "<label for='WaterBasement'>Water Basement ( 1/1000 cm ) : </label>\n" ) ;
+  HTML += String ( "<input type='number' id='WaterBasement' name='Value' step=100 value='"  ) ;
+  HTML += String ( WaterBasement                                           ) ;
+  HTML += String ( "' />\n"                                                ) ;
+  HTML += String ( "<input type='hidden' name='Method' value='Settings' />\n" ) ;
+  HTML += String ( "<input type='hidden' name='Item' value='Water' />\n"   ) ;
+  HTML += String ( "<input type='hidden' name='Property' value='Basement' />\n" ) ;
+  HTML += String ( "<button type='submit' form='WaterBasementForm'>"       ) ;
+  HTML += String ( "Setup</button>"                                        ) ;
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='WaterHighestForm'>" ) ;
+  HTML += String ( "<label for='HighestWater'>Highest Water Level ( 1/1000 cm ) : </label>\n" ) ;
+  HTML += String ( "<input type='number' id='HighestWater' name='Value' step=100 value='"  ) ;
+  HTML += String ( HighestWaterLevel                                       ) ;
+  HTML += String ( "' />\n"                                                ) ;
+  HTML += String ( "<input type='hidden' name='Method' value='Settings' />\n" ) ;
+  HTML += String ( "<input type='hidden' name='Item' value='Water' />\n"   ) ;
+  HTML += String ( "<input type='hidden' name='Property' value='Highest' />\n" ) ;
+  HTML += String ( "<button type='submit' form='WaterHighestForm'>"        ) ;
+  HTML += String ( "Setup</button>"                                        ) ;
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='WaterLowestForm'>" ) ;
+  HTML += String ( "<label for='LowestWater'>Lowest Water Level ( 1/1000 cm ) : </label>\n" ) ;
+  HTML += String ( "<input type='number' id='LowestWater' name='Value' step=100 value='"  ) ;
+  HTML += String ( LowestWaterLevel                                        ) ;
+  HTML += String ( "' />\n"                                                ) ;
+  HTML += String ( "<input type='hidden' name='Method' value='Settings' />\n" ) ;
+  HTML += String ( "<input type='hidden' name='Item' value='Water' />\n"   ) ;
+  HTML += String ( "<input type='hidden' name='Property' value='Lowest' />\n" ) ;
+  HTML += String ( "<button type='submit' form='WaterLowestForm'>"         ) ;
+  HTML += String ( "Setup</button>"                                        ) ;
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<a href='/'>Home</a>\n"                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</body>"                                               ) ;
+  HTML += String ( "</html>"                                               ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HttpServer -> send ( 200 , "text/html" , HTML                            ) ;
+  ////////////////////////////////////////////////////////////////////////////
+}
+//////////////////////////////////////////////////////////////////////////////
+void WebServerSettings ( )                                                   {
+  ////////////////////////////////////////////////////////////////////////////
+  if ( HttpServer == nullptr )                                               {
+    return                                                                   ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  String HTML                                                                ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML  = String ( "<!DOCTYPE html>"                                       ) ;
+  HTML += String ( "<html>"                                                ) ;
+  HTML += String ( "<head>"                                                ) ;
+  HTML += String ( "</head>"                                               ) ;
+  HTML += String ( "<body>"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( VersionMessage                                          ) ;
+  HTML += String ( "</div>\n"                                              ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Setup Account</div><br>\n"                        ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='AccountForm'>" ) ;
+  HTML += String ( "<input type='hidden' id='Method' name='Method' value='Settings'>" ) ;
+  HTML += String ( "<input type='hidden' id='Item' name='Item' value='Account'>" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<label for='AccountUsername'>Username : </label>\n"               ) ;
+  HTML += String ( "<input type='text' id='AccountUsername' name='Username' value='"  ) ;
+  HTML += String ( SiteUsername                                            ) ;
+  HTML += String ( "' />"                                                  ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<label for='AccountPassword'>Password : </label>\n" ) ;
+  HTML += String ( "<input type='text' id='AccountPassword' name='Password' value='"  ) ;
+  HTML += String ( SitePassword                                            ) ;
+  HTML += String ( "' />"                                                  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='AccountForm'>"            ) ;
+  HTML += String ( "Setup Account Username and Password</button>" ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Serial Port Report : </span><span>"         ) ;
+  if             ( Console                                                 ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=Console&Turn=On'>Turn On</a>"   ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "&nbsp;"                                                ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=Console&Turn=Off'>Turn Off</a>" ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><span>Slow Down and Power Saving : </span><span>" ) ;
+  if             ( doDelay                                                 ) {
+    HTML += String ( "On"  )                                                 ;
+  } else                                                                     {
+    HTML += String ( "Off" )                                                 ;
+  }                                                                          ;
+  HTML += String ( "</span></div>\n"                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>"                                                 ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=Delay&Turn=On'>Turn On</a>"   ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "&nbsp;"                                                ) ;
+  HTML += String ( "<span>"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Settings&Item=Delay&Turn=Off'>Turn Off</a>" ) ;
+  HTML += String ( "</span>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Configure Delay Interval</div><br>\n"             ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='IntervalForm'>" ) ;
+  HTML += String ( "<input type='hidden' id='Method' name='Method' value='Settings'>" ) ;
+  HTML += String ( "<input type='hidden' id='Item' name='Item' value='Interval'>" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<label for='DelayInterval'>Site : </label>\n"          ) ;
+  HTML += String ( "<input type='number' id='DelayInterval' name='Microseconds' value='" ) ;
+  HTML += String ( MicrosecondsDelay                                       ) ;
+  HTML += String ( "' />"                                                  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='IntervalForm'>"            ) ;
+  HTML += String ( "Setup Delay Interval</button>"                         ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div>Configure Pump Switch Mode</div><br>\n"                  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<div><form action='/Controller' method='GET' id='PumpSwitchModeForm'>" ) ;
+  HTML += String ( "<input type='hidden' id='Method' name='Method' value='Settings'>" ) ;
+  HTML += String ( "<input type='hidden' id='Item' name='Item' value='Switch'>" ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='radio' name='Mode' value='Switch'"     ) ;
+  if                ( PowerSwitchMode == 0                                 ) {
+    HTML  += String ( " checked"                                           ) ;
+  }                                                                          ;
+  HTML    += String ( " /><span>Switch Mode</span><br>\n"                  ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='radio' name='Mode' value='Sync'"       ) ;
+  if                ( PowerSwitchMode == 1                                 ) {
+    HTML  += String ( " checked"                                           ) ;
+  }                                                                          ;
+  HTML    += String ( " /><span>Sync Mode</span><br>\n"                    ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML    += String ( "<input type='radio' name='Mode' value='Isolate'"    ) ;
+  if                ( PowerSwitchMode == 2                                 ) {
+    HTML  += String ( " checked"                                           ) ;
+  }                                                                          ;
+  HTML    += String ( " /><span>Isolate Mode</span><br>\n"                 ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</form>"                                               ) ;
+  HTML += String ( "</div>"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<button type='submit' form='PumpSwitchModeForm'>"      ) ;
+  HTML += String ( "Setup Pump Switch Mode</button>"                       ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<a href='/Controller?Method=EEPROM'>Write Settings into EEPROM</a>\n" ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<a href='/Controller?Method=Reset'>Reboot</a>\n"       ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  HTML += String ( "<br>\n"                                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "<a href='/'>Home</a>\n"                                ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HTML += String ( "</body>"                                               ) ;
+  HTML += String ( "</html>"                                               ) ;
+  ////////////////////////////////////////////////////////////////////////////
+  HttpServer -> send ( 200 , "text/html" , HTML                            ) ;
+  ////////////////////////////////////////////////////////////////////////////
+}
+//////////////////////////////////////////////////////////////////////////////
+void WebServerController (                                                 ) {
+  ////////////////////////////////////////////////////////////////////////////
+  if                    ( HttpServer == nullptr                            ) {
+    return                                                                   ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  int pc                                                                     ;
+  if                    ( HttpServer -> args ( ) > 0                       ) {
+    if                  ( HttpServer -> hasArg ( "Method" )                ) {
+      ////////////////////////////////////////////////////////////////////////
+      String Method = HttpServer -> arg ( "Method" )                         ;
+      ////////////////////////////////////////////////////////////////////////
+      // 重置機器
+      ////////////////////////////////////////////////////////////////////////
+      if                ( Method == "Reset"                                ) {
+        //////////////////////////////////////////////////////////////////////
+        HttpServer -> sendHeader ( "Location" , "/"          , true        ) ;
+        HttpServer -> send       ( 302        , "text/plain" , ""          ) ;
+        delayMicroseconds ( 1000000                                        ) ;
+        resetFunc         (                                                ) ;
+        //////////////////////////////////////////////////////////////////////
+      } else
+      ////////////////////////////////////////////////////////////////////////
+      // 寫入EEPROM
+      ////////////////////////////////////////////////////////////////////////
+      if                ( Method == "EEPROM"                               ) {
+        //////////////////////////////////////////////////////////////////////
+        FlashEEPROM     (                                                  ) ;
+        //////////////////////////////////////////////////////////////////////
+        HttpServer -> sendHeader ( "Location" , "/settings"  , true        ) ;
+        HttpServer -> send       ( 302        , "text/plain" , ""          ) ;
+        return                                                               ;
+        //////////////////////////////////////////////////////////////////////
+      } else
+      ////////////////////////////////////////////////////////////////////////
+      // 切換抽水機
+      ////////////////////////////////////////////////////////////////////////
+      if                ( Method == "Water"                                ) {
+        //////////////////////////////////////////////////////////////////////
+        String MSG                                                           ;
+        String TURN = HttpServer -> arg ( "Turn" )                           ;
+        bool   pwm                                                           ;
+        //////////////////////////////////////////////////////////////////////
+        if              ( UseWiFi                                          ) {
+          if            ( TURN == "On"                                     ) {
+            PC -> Turn       ( true                                        ) ;
+            UpdatePumpStatus (                                             ) ;
+          } else
+          if            ( TURN == "Off"                                    ) {
+            PC -> Turn       ( false                                       ) ;
+            UpdatePumpStatus (                                             ) ;
+          } else
+          if            ( TURN == "Switch"                                 ) {
+            PC -> Switch     (                                             ) ;
+            UpdatePumpStatus (                                             ) ;
+          }                                                                  ;
+          pc = PC -> Power   (                                             ) ;
+          PumpPower   = pc ? 1 : 0                                           ;
+          HttpServer -> sendHeader ( "Location" , "/control.html" , true   ) ;
+          HttpServer -> send       ( 302        , "text/plain"    , ""     ) ;
+        } else                                                               {
+          HttpServer -> send ( 200 , "text/html" , "Can not do it!"        ) ;
+        }                                                                    ;
+        //////////////////////////////////////////////////////////////////////
+        return                                                               ;
+        //////////////////////////////////////////////////////////////////////
+      } else
+      ////////////////////////////////////////////////////////////////////////
+      // 切換電磁水閥
+      ////////////////////////////////////////////////////////////////////////
+      if                ( Method == "Valve"                                ) {
+        //////////////////////////////////////////////////////////////////////
+        String TURN = HttpServer -> arg ( "Turn" )                           ;
+        //////////////////////////////////////////////////////////////////////
+        if              ( UseWiFi                                          ) {
+          if            ( TURN == "On"                                     ) {
+            TurnSolenoidValve ( true                                       ) ;
+            UpdateValveStatus (                                            ) ;
+          } else
+          if              ( TURN == "Off"                                  ) {
+            TurnSolenoidValve ( false                                      ) ;
+            UpdateValveStatus (                                            ) ;
+          }
+          HttpServer -> sendHeader ( "Location" , "/control.html" , true   ) ;
+          HttpServer -> send       ( 302        , "text/plain"    , ""     ) ;
+          return                                                             ;
+        } else                                                               {
+          HttpServer -> send ( 200 , "text/html" , "Can not do it!"        ) ;
+          return                                                             ;
+        }
+        //////////////////////////////////////////////////////////////////////
+      } else
+      if                ( Method == "WiFi"                                 ) {
+        String SSID   = HttpServer -> arg ( "SSID"     )                     ;
+        String PASSWD = HttpServer -> arg ( "Password" )                     ;
+        char   buf [ 256 ]                                                   ;
+        SSID   . toCharArray    ( buf , 255                                ) ;
+        WifiSSID      = strdup  ( buf                                      ) ;
+        PASSWD . toCharArray    ( buf , 255                                ) ;
+        WifiPassword  = strdup  ( buf                                      ) ;
+        FlashEEPROM     (                                                  ) ;
+        HttpServer -> sendHeader ( "Location" , "/"          , true        ) ;
+        HttpServer -> send       ( 302        , "text/plain" , ""          ) ;
+        return                                                             ;
+      }
+      if                ( Method == "Settings"                             ) {
+        //////////////////////////////////////////////////////////////////////
+        String ITEM = HttpServer -> arg   ( "Item" )                         ;
+        if              ( ITEM   == "Console"                              ) {
+          String TURN = HttpServer -> arg   ( "Turn" )                       ;
+          if            ( TURN == "On"                                     ) {
+            Console = true                                                   ;
+          } else                                                             {
+            Console = false                                                  ;
+          }                                                                  ;
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/settings.html" , true  ) ;
+          HttpServer -> send       ( 302        , "text/plain"     , ""    ) ;
+          return                                                             ;
+        } else
+        if              ( ITEM   == "Delay"                                ) {
+          String TURN = HttpServer -> arg   ( "Turn" )                       ;
+          if            ( TURN == "On"                                     ) {
+            doDelay = true                                                   ;
+          } else                                                             {
+            doDelay = false                                                  ;
+          }                                                                  ;
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/settings.html" , true  ) ;
+          HttpServer -> send       ( 302        , "text/plain"     , ""    ) ;
+          return                                                             ;
+        } else
+        if              ( ITEM   == "Interval"                             ) {
+          String MS = HttpServer -> arg   ( "Microseconds" )                 ;
+          MicrosecondsDelay = MS . toInt ( )                                 ;
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/settings.html" , true  ) ;
+          HttpServer -> send       ( 302        , "text/plain"     , ""    ) ;
+          return                                                             ;
+        } else
+        if              ( ITEM   == "Switch"                               ) {
+          String MODE = HttpServer -> arg   ( "Mode" )                       ;
+          if            ( MODE == "Switch"                                 ) {
+            PowerSwitchMode = 0                                              ;
+            PC -> setSwitch ( PowerSwitchMode )                              ;
+          } else
+          if            ( MODE == "Sync"                                   ) {
+            PowerSwitchMode = 1                                              ;
+            PC -> setSwitch ( PowerSwitchMode )                              ;
+          } else
+          if            ( MODE == "Isolate"                                ) {
+            PowerSwitchMode = 2                                              ;
+            PC -> setSwitch ( PowerSwitchMode )                              ;
+          }                                                                  ;
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/settings.html" , true  ) ;
+          HttpServer -> send       ( 302        , "text/plain"     , ""    ) ;
+          return                                                             ;
+        } else
+        if              ( ITEM   == "Level"                                ) {
+          String TURN = HttpServer -> arg   ( "Turn" )                       ;
+          if            ( TURN == "On"                                     ) {
+            DetectWater = true                                               ;
+          } else                                                             {
+            DetectWater = false                                              ;
+          }                                                                  ;
+          FlashEEPROM   (                                                  ) ;
+        } else
+        if              ( ITEM   == "Water"                                ) {
+          String PROP  = HttpServer -> arg ( "Property" )                    ;
+          String VALUE = HttpServer -> arg ( "Value"    )                    ;
+          int    Z     = VALUE . toInt     (            )                    ;
+          if            ( PROP == "Basement"                               ) {
+            WaterBasement = Z                                                ;
+          } else
+          if            ( PROP == "Highest"                                ) {
+            HighestWaterLevel = Z                                            ;
+          } else
+          if            ( PROP == "Lowest"                                 ) {
+            LowestWaterLevel = Z                                             ;
+          }
+          FlashEEPROM   (                                                  ) ;
+        } else
+        if              ( ITEM   == "WiFiMode"                             ) {
+          String MODE = HttpServer -> arg   ( "Mode" )                       ;
+          WifiMode = MODE . toInt ( )                                        ;
+          if            ( WifiMode < 1                                     ) {
+            WifiMode = 3                                                     ;
+          } else
+          if            ( WifiMode > 3                                     ) {
+            WifiMode = 3                                                     ;
+          }
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/wifi.html" , true      ) ;
+          HttpServer -> send       ( 302        , "text/plain" , ""        ) ;
+          return                                                             ;
+        } else
+        if              ( ITEM   == "WIFI"                                 ) {
+          String MODE = HttpServer -> arg   ( "Use" )                        ;
+          if            ( MODE == "On"                                     ) {
+            UseWiFi = true                                                   ;
+          } else                                                             {
+            UseWiFi = false                                                  ;
+          }                                                                  ;
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/wifi.html" , true      ) ;
+          HttpServer -> send       ( 302        , "text/plain" , ""        ) ;
+          return                                                             ;
+        } else
+/*
+bool               AssignIP         = false                                  ;
+char               HostIP      [ 4 ]                                         ;
+char               HostGateway [ 4 ]                                         ;
+char               HostNetmask [ 4 ]                                         ;
+*/
+        if              ( ITEM   == "Site"                                 ) {
+          String NAME   = HttpServer -> arg ( "Name" )                       ;
+          String PASSWD = HttpServer -> arg ( "SapPassword" )                ;
+          char site [ 256 ]                                                  ;
+          NAME   . toCharArray ( site , 23 )                                 ;
+          ArduinoSite = strdup ( site )                                      ;
+          PASSWD . toCharArray ( site , 31 )                                 ;
+          SapPassword = strdup ( site )                                      ;
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/"          , true      ) ;
+          HttpServer -> send       ( 302        , "text/plain" , ""        ) ;
+          return                                                             ;
+        } else
+        if              ( ITEM   == "Account"                              ) {
+          String NAME   = HttpServer -> arg ( "Username" )                   ;
+          String PASSWD = HttpServer -> arg ( "Password" )                   ;
+          char site [ 256 ]                                                  ;
+          NAME   . toCharArray ( site , 31 )                                 ;
+          SiteUsername = strdup ( site )                                     ;
+          PASSWD . toCharArray ( site , 31 )                                 ;
+          SitePassword = strdup ( site )                                     ;
+          FlashEEPROM   (                                                  ) ;
+          HttpServer -> sendHeader ( "Location" , "/settings.html" , true  ) ;
+          HttpServer -> send       ( 302        , "text/plain"     , ""    ) ;
+          return                                                             ;
+        }
+        //////////////////////////////////////////////////////////////////////
+      }                                                                      ;
+      ////////////////////////////////////////////////////////////////////////
+    }                                                                        ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  if                    ( HttpServer -> headers ( ) > 0                    ) {
+    if                  ( Console                                          ) {
+      Serial . print    ( "AJAX Headers : "                                ) ;
+      Serial . println  ( HttpServer -> headers ( ) , DEC                  ) ;
+    }                                                                        ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  HttpServer -> sendHeader ( "Location" , "/control.html" , true           ) ;
+  HttpServer -> send       ( 302        , "text/plain"    , ""             ) ;
   ////////////////////////////////////////////////////////////////////////////
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -533,7 +984,10 @@ void WebServerAJAX      (                                                  ) {
       ////////////////////////////////////////////////////////////////////////
       if                ( Method == "Reset"                                ) {
         //////////////////////////////////////////////////////////////////////
-        resetFunc       (                                                  ) ;
+        HttpServer -> sendHeader ( "Location" , "/"          , true        ) ;
+        HttpServer -> send       ( 302        , "text/plain" , ""          ) ;
+        delayMicroseconds ( 1000000                                        ) ;
+        resetFunc         (                                                ) ;
         //////////////////////////////////////////////////////////////////////
       } else
       ////////////////////////////////////////////////////////////////////////
@@ -618,6 +1072,16 @@ void WebServerAJAX      (                                                  ) {
             "Can not do it!"                                               ) ;
           return                                                             ;
         }
+        //////////////////////////////////////////////////////////////////////
+      } else
+      if                ( Method == "JSON"                                 ) {
+        //////////////////////////////////////////////////////////////////////
+        String JSON = StatusToJson ( )                                       ;
+        //////////////////////////////////////////////////////////////////////
+        HttpServer -> send                                                   (
+          200                                                                ,
+          "text/json"                                                        ,
+          JSON                                                             ) ;
         //////////////////////////////////////////////////////////////////////
       } else
       if                ( Method == "Settings"                             ) {
@@ -909,12 +1373,14 @@ void PrepareHTTP           ( void                                          ) {
   }                                                                          ;
   ////////////////////////////////////////////////////////////////////////////
   HttpInitialized = true                                                     ;
-  HttpServer -> on         ( "/"            , WebServerEntry               ) ;
-  HttpServer -> on         ( "/index.html"  , WebServerEntry               ) ;
-  HttpServer -> on         ( "/status.html" , WebServerStatus              ) ;
-  HttpServer -> on         ( "/WIFI"        , WebServerWIFI                ) ;
-  HttpServer -> on         ( "/AJAX"        , WebServerAJAX                ) ;
-  HttpServer -> onNotFound (                  WebServerNotFound            ) ;
+  HttpServer -> on         ( "/"              , WebServerEntry             ) ;
+  HttpServer -> on         ( "/index.html"    , WebServerEntry             ) ;
+  HttpServer -> on         ( "/wifi.html"     , WebServerWIFI              ) ;
+  HttpServer -> on         ( "/control.html"  , WebServerControl           ) ;
+  HttpServer -> on         ( "/settings.html" , WebServerSettings          ) ;
+  HttpServer -> on         ( "/Controller"    , WebServerController        ) ;
+  HttpServer -> on         ( "/AJAX"          , WebServerAJAX              ) ;
+  HttpServer -> onNotFound (                    WebServerNotFound          ) ;
   HttpServer -> begin      (                                               ) ;
   ////////////////////////////////////////////////////////////////////////////
 }
@@ -1027,21 +1493,22 @@ void InitializeWaterCycler   (                                             ) {
   // 抽水機
   ////////////////////////////////////////////////////////////////////////////
   SetOutput                  ( PumpIO                                      ) ;
-  WriteValue                 ( PumpIO , 0                                  ) ;
-  ////////////////////////////////////////////////////////////////////////////
-  // 電磁水閥
-  ////////////////////////////////////////////////////////////////////////////
-  SetOutput                  ( ValveIO                                     ) ;
-  WriteValue                 ( ValveIO , 1                                 ) ;
-  TurnSolenoidValve          ( false                                       ) ;
+  WriteValue                 ( PumpIO  , 0                                 ) ;
   ////////////////////////////////////////////////////////////////////////////
   // 抽水開關
   ////////////////////////////////////////////////////////////////////////////
   SetInput                   (  SwitchIO                                   ) ;
   ////////////////////////////////////////////////////////////////////////////
+  // 電磁水閥
+  ////////////////////////////////////////////////////////////////////////////
+  SetOutput                  ( ValveIO                                     ) ;
+  WriteValue                 ( ValveIO , 0                                 ) ;
+  SetInput                   ( ValveSwitch                                 ) ;
+  ValveStatus = ReadValue    ( ValveSwitch                                 ) ;
+  TurnSolenoidValve          ( false                                       ) ;
+  ////////////////////////////////////////////////////////////////////////////
   // 暫時沒有用到
   ////////////////////////////////////////////////////////////////////////////
-  SetInput                   (  6                                          ) ;
   SetInput                   (  7                                          ) ;
   SetInput                   (  8                                          ) ;
   ////////////////////////////////////////////////////////////////////////////
@@ -1057,15 +1524,25 @@ void InitializeWaterCycler   (                                             ) {
 //////////////////////////////////////////////////////////////////////////////
 void ProbeWaterCycler              (                                       ) {
   ////////////////////////////////////////////////////////////////////////////
-  int  dtm     = millis            (                                       ) ;
-  int  dt      = dtm - PowerProbedMillis                                     ;
+  int  dtm       = millis          (                                       ) ;
+  int  dt        = dtm - PowerProbedMillis                                   ;
   bool in                                                                    ;
-  bool changed = false                                                       ;
+  bool changed   = false                                                     ;
   bool pc                                                                    ;
-  int  cwl     = 0                                                           ;
+  bool vsChanged = false                                                     ;
+  int  cwl       = 0                                                         ;
+  int  vs        = 0                                                         ;
   ////////////////////////////////////////////////////////////////////////////
   if                               ( dt < 10                               ) {
     return                                                                   ;
+  }                                                                          ;
+  ////////////////////////////////////////////////////////////////////////////
+  // 偵測電磁水閥開關是否有改變
+  ////////////////////////////////////////////////////////////////////////////
+  vs           = ReadValue         ( ValveSwitch                           ) ;
+  if                               ( vs != ValveStatus                     ) {
+    vsChanged  = true                                                        ;
+    ValveStatus = vs                                                         ;
   }                                                                          ;
   ////////////////////////////////////////////////////////////////////////////
   // 偵測水位
@@ -1073,14 +1550,38 @@ void ProbeWaterCycler              (                                       ) {
   cwl          = CurrentWaterLevel (                                       ) ;
   if                               ( DetectWater                           ) {
     if                             ( cwl > HighestWaterLevel               ) {
-      TurnSolenoidValve            ( false                                 ) ;
-      UpdateValveStatus            (                                       ) ;
+      if                           ( SolenoidValve                         ) {
+        CareValve = false                                                    ;
+        TurnSolenoidValve          ( false                                 ) ;
+        UpdateValveStatus          (                                       ) ;
+      }                                                                      ;
     } else
     if                             ( cwl < LowestWaterLevel                ) {
-      TurnSolenoidValve            ( true                                  ) ;
-      UpdateValveStatus            (                                       ) ;
-    }
-  }
+      if                           ( vsChanged                             ) {
+        if                         ( SolenoidValve                         ) {
+          CareValve = true                                                   ;
+        } else                                                               {
+          CareValve = false                                                  ;
+        }                                                                    ;
+        ChangeSolenoidValve        (                                       ) ;
+      } else                                                                 {
+        if                         ( ! CareValve                           ) {
+          if                       ( ! SolenoidValve                       ) {
+            TurnSolenoidValve      ( true                                  ) ;
+            UpdateValveStatus      (                                       ) ;
+          }                                                                  ;
+        }                                                                    ;
+      }                                                                      ;
+    } else                                                                   {
+      if                           ( vsChanged                             ) {
+        ChangeSolenoidValve        (                                       ) ;
+      }                                                                      ;
+    }                                                                        ;
+  } else                                                                     {
+    if                             ( vsChanged                             ) {
+      ChangeSolenoidValve          (                                       ) ;
+    }                                                                        ;
+  }                                                                          ;
   ////////////////////////////////////////////////////////////////////////////
   PowerProbedMillis = dtm                                                    ;
     pc         = PC -> Probe       (                                       ) ;
