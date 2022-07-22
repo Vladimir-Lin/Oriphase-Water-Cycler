@@ -744,7 +744,7 @@ module WaterNozzleClamp ( )
   width  = 24.0 ;
   height = 15.0 ;
   length = 20.0 ;
-  roller = 25.0 ;
+  roller = 35.0 ;
   hole   =  6.0 ;
   difference ( ) {
     union ( ) {
